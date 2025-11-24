@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+pydantic-settings
+sqlalchemy
+asyncpg
+redis
+celery
+boto3
+httpx
+pillow
+opencv-python
+python-dotenv
+supabase
+google-generativeai
+python-multipart
+fal-client

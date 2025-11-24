@@ -1,0 +1,375 @@
+i want a production-grade “thumbnail factory” that eats a few selfies and spits out platform-perfect bangers on demand. Good. Here’s the full MVP plan you can actually ship, not a dribbble fantasy.
+
+# 1) Product scope, crisp
+
+**Two creation modes**
+
+1. **Design mode**: user uploads up to 10 reference selfies, picks platform + size, answers a short form, adds prompt. Model generates multiple variants, user refines, adds text, exports.
+2. **Copy mode**: user drops an existing thumbnail + their selfie(s). System replaces the face, matches style, fonts, colors, layout, recreates text as editable layers, exports sizes.
+
+**Platforms & sizes (px)**
+
+* YouTube: 1280×720
+* Instagram post: 1080×1350 and 1080×1080
+* Reels/Shorts: 1080×1920
+* X header: 1500×500
+* WhatsApp channel banner: 1080×608
+* Custom ratio: any W×H
+
+# 2) Models and identity-consistency reality check
+
+Use a model pool plus identity modules. Keep a routing strategy.
+
+**Open-weight / API-first image models**
+
+* **FLUX.1 family (BFL)**. Fast open weights, strong quality, in-context editing with FLUX.1 Kontext for text+image conditioning. Good for template-style edits and layout-aware changes. ([GitHub][1])
+* **GPT-Image 1 (OpenAI)**. Reliable text rendering and editing masks via API, safe defaults, simple to integrate. Use when user needs precise text on image. ([OpenAI Platform][2])
+* **Seedream 4.0**. Strong identity stability with appearance/face lock, multi-image composition, 4K. Offered on fal and similar providers. Good for “copy thumbnail” and consistent series. ([blog.fal.ai][3])
+* **“Nano Banana / Nano Banana Pro”**. Strong text rendering, multi-image blending, watermarking via SynthID if this is indeed the Google line everyone hints at. Use if you can access it legitimately; treat branding as tentative in code. ([blog.google][4])
+
+**Identity-preserving add-ons**
+
+* **InstantID** for zero-shot face fidelity from a single image; drop-in with SDXL/Flux pipelines. Use face landmarks + IdentityNet conditioning. Essential for Copy mode and multi-shot consistency. ([arXiv][5])
+
+Routing rules, pragmatic:
+
+* Need strong text accuracy or mask edits with type on top → try GPT-Image 1.
+* Need style mimic with user photo replacement → Seedream 4.0 + InstantID.
+* Need speed and cheaper open infra → FLUX.1 schnell + InstantID. ([Replicate][6])
+* If you do integrate “Nano Banana Pro,” gate it behind an experimental toggle and show C2PA/SynthID flags to users. ([Indiatimes][7])
+
+# 3) The questionnaire, ruthless and short
+
+**Section A. Project basics**
+
+* Platform: YouTube, Instagram Post, Reels, X header, WhatsApp banner, Custom.
+* Size: presets above or custom W×H.
+* Orientation: portrait, landscape, square.
+* Safe content filter: standard, strict.
+
+**Section B. Creative brief**
+
+* Video title or core message
+* Thumbnail headline text (short, 2–6 words)
+* Sub text (optional, 0–10 words)
+* Vibe: bold, clean, cinematic, neon, pastel, tech, minimalist, meme, documentary.
+* Color priority: warm, cool, brand palette (pick hex), high contrast, grayscale + accent.
+* Subject emotion: shock, curiosity, authority, joy, concern, deadpan.
+
+**Section C. Face & subject**
+
+* Reference selfies: 1–10 images
+* Keep same outfit or allow wardrobe changes
+* Allowed transformations: lighting, scene change, background swap, accessories
+* No-gos: change eye color, remove beard, alter body shape, heavy beauty filters
+
+**Section D. Layout & composition**
+
+* Close-up face left/right/center
+* Rule of thirds focus point
+* Text placement: top, bottom, left, right, around face
+* Space for platform overlays: reserve top-right for YouTube timestamp etc.
+
+**Section E. Typography**
+
+* Font mood: chunky sans, condensed sans, slab, handwritten
+* Text effects: stroke, drop shadow, inner glow, outline thickness
+* Max word count hard cap
+
+**Section F. Reference inspiration**
+
+* Upload “copy target” thumbnail (for Copy mode)
+* Upload brand guide or color hex list
+* Paste URLs of 1–3 inspiration thumbnails
+
+**Section G. Output & delivery**
+
+* Variants count: 2, 4, 6
+* Export formats: PNG, JPG, layered PSD/PNG+JSON spec
+* Additional crops: auto-generate platform alternates
+
+**Section H. Credits & runtime**
+
+* Model choice: auto, FLUX, GPT-Image, Seedream, NanoBanana Pro (experimental)
+* Quality tier: draft, standard, 4K
+* Seed/randomness: fixed seed yes/no for series
+* Batch runs: 1–3 prompts for A/B
+
+# 4) Prompting templates
+
+**Design mode, base**
+
+```
+System: You create high-CTR thumbnails. Respect given canvas size.
+User content:
+- Title: "{title}"
+- Headline text: "{headline}"
+- Subtext: "{subtext}"
+- Vibe: {vibe}
+- Color priority: {color}
+- Composition: face {face_pos}, leave text space at {text_pos}
+- Prohibited changes: {no_gos}
+- Keep the person’s face identical to refs. Use InstantID landmarks if available.
+- Output background with high contrast and clear subject separation.
+```
+
+**Copy mode, mimic**
+
+```
+System: Recreate layout, color grade, contrast, and typographic hierarchy of the reference image,
+not copying exact fonts if unavailable, but matching weight and placement.
+User content:
+- Replace subject face with the provided identity.
+- Preserve framing, lighting direction, and dominant colors.
+- Recreate text as editable layers with these strings: {headline}, {subtext}.
+- Maintain same relative margins and safe areas.
+- Match noise/film grain subtly if present.
+```
+
+# 5) Architecture, minimal that scales
+
+**High level**
+
+* **Frontend**: Next.js 15, App Router, Server Actions, Auth.js with email + OAuth, UploadThing or tus for large files.
+* **Backend**: FastAPI on Python 3.11, Celery or RQ worker, Redis for queues, Postgres (Supabase or RDS) for data and credits, S3 compatible storage for assets, Webhooks + SSE for job updates.
+* **Image runtime**:
+
+  * Provider SDKs for GPT-Image and any “Nano Banana” endpoint you can legally hit.
+  * Self-host FLUX.1 schnell + InstantID on a GPU pod (Runpod/Modal/Auto-scaling).
+  * Optional fal.ai for Seedream 4.0 until you self-host.
+* **Observability**: Prometheus metrics, Sentry, structured logs.
+* **Safety**: NSFW detector on outputs, face-swap misuse guard, watermark disclosure toggle when provider enforces C2PA.
+
+# 6) Data model (Postgres)
+
+```
+users(id, email, name, role, created_at)
+profiles(user_id FK, plan, credits, brand_colors jsonb, default_style jsonb)
+
+assets(id, user_id FK, type enum['selfie','ref','copy_target','render'],
+       path, width, height, md5, created_at)
+
+projects(id, user_id FK, mode enum['design','copy'], platform, width, height,
+         status enum['draft','queued','done','failed'], created_at)
+
+prompts(id, project_id FK, raw jsonb, normalized jsonb, seed int, model_pref text)
+
+jobs(id, project_id FK, model text, quality enum['draft','std','4k'],
+     status enum['queued','running','succeeded','failed'],
+     cost_credits int, provider jsonb, started_at, finished_at)
+
+renders(id, job_id FK, asset_id FK, variant int, meta jsonb, thumbnail_path)
+
+audit(id, user_id FK, action text, delta_credits int, meta jsonb, created_at)
+```
+
+# 7) Credit system
+
+**Simple rules**
+
+* Draft 512–768 px: 1 credit
+* Standard 1080p: 2 credits
+* 4K: 4 credits
+* Add 1 credit if Copy mode with InstantID
+* Add provider surcharge if using paid API pass-through
+
+Deduct credits at job queue time, refund on hard failure. Maintain an `audit` trail.
+
+# 8) FastAPI skeleton
+
+**Dependencies**
+
+* fastapi, uvicorn, pydantic-settings, sqlalchemy, asyncpg, redis, celery, boto3, httpx, pillow, opencv-python, onnxruntime or torch for InstantID pipeline
+
+**Routes**
+
+```
+POST /auth/callback             # handled by Next, backend verifies JWT
+GET  /me                        # profile and credits
+POST /credits/purchase          # stripe session create (optional)
+
+POST /upload/selfie             # presigned URL or multipart
+POST /upload/reference
+POST /upload/copy-target
+
+POST /project                   # create project
+PATCH /project/{id}             # update config
+POST /project/{id}/queue        # enqueue generation
+
+GET  /jobs/{id}                 # status
+GET  /projects/{id}/renders     # list outputs
+GET  /assets/{id}               # presigned download
+
+POST /webhooks/provider         # receive async results if provider supports
+GET  /stream/jobs/{id}          # SSE updates
+```
+
+**Job worker pseudo**
+
+```python
+def run_job(job_id):
+    job = db.get_job(job_id)
+    cfg = resolve_model_config(job)
+    refs = load_reference_faces(job)
+    if job.mode == 'copy':
+        frame = replicate_layout(job.copy_target)  # detect text boxes, colors
+    pipe = build_pipeline(cfg)  # e.g., FLUX.1 + InstantID
+    prompt, negative = compose_prompts(job)
+    images = pipe.generate(prompt, negative, seed=job.seed, size=job.size, refs=refs)
+    layered = add_text_layers(images, job.typography)
+    stored = store_outputs(layered)
+    db.save_renders(job_id, stored)
+```
+
+**InstantID integration path**
+
+* Run InsightFace to extract landmarks
+* Feed IdentityNet conditioning into SDXL/Flux pipeline
+* Keep denoise strength 0.25–0.45 for edits to preserve face topology, bump to 0.6 only when replacing backgrounds. ([arXiv][5])
+
+# 9) Next.js frontend
+
+**Pages**
+
+* `/login`, `/onboarding` for brand colors and default vibes
+* `/create` tabbed: Design | Copy
+* Dynamic form built from the questionnaire
+* Live credit meter, estimator per selection
+* Upload zone with automatic face-quality check
+* Preview grid with variant selection, quick text editor (headline, stroke slider)
+* Export drawer with multi-size download, or export all
+
+**Tech**
+
+* App Router, Server Actions to call FastAPI with your JWT
+* Auth.js with email magic link + OAuth
+* shadcn/ui, Zustand for state, react-hook-form + zod
+* Canvas editor: Fabric.js or Konva for text boxes and guides
+
+# 10) Layout replication in Copy mode
+
+Pipeline:
+
+1. Detect text boxes, font weights, and placement using OCR + heuristic layout rules (Tesseract + Vision API fallback).
+2. Extract palette with median-cut, detect dominant two colors.
+3. Rebuild a vector spec:
+
+```
+{
+  "canvas": {"w":1280,"h":720},
+  "layers":[
+     {"type":"image","role":"background","ops":["blur:2","vignette:0.1"]},
+     {"type":"image","role":"subject","mask":"person"},
+     {"type":"text","content":"{HEADLINE}","bbox":[80,520,1120,120],
+      "style":{"weight":"extra-bold","stroke":6,"shadow":true}}
+  ]
+}
+```
+
+4. Generate background with chosen model, then composite subject with InstantID output, then render text layers with web canvas for guaranteed crispness.
+
+# 11) Safety and provenance
+
+* Enforce allowed content policy. Reject outright if NSFW or celebrity face with Copy mode.
+* Display provider provenance for each render. If C2PA/SynthID present, surface it. ([Indiatimes][7])
+* Keep originals for 30 days then purge unless user pins them.
+
+# 12) Pricing tiers for MVP
+
+* Starter: 50 credits/month, standard models, 1080p.
+* Pro: 250 credits/month, access to Copy mode and 4K.
+* Team: org seats, shared assets, brand kits, API access.
+
+# 13) Engineering checklist, zero nonsense
+
+**Week 1**
+
+* DB schema + migrations, Auth, uploads, credit wallet, SSE channel
+* FLUX.1 schnell self-host path working, draft quality, PNG export. ([Hugging Face][8])
+
+**Week 2**
+
+* InstantID in the FLUX pipeline, face lock controls. ([arXiv][5])
+* Seedream through fal provider as fallback. ([blog.fal.ai][3])
+* Frontend forms, preview grid, credit deductions
+
+**Week 3**
+
+* Copy mode layout extractor, text re-typesetting
+* GPT-Image 1 mask edit integration for precise text and logos. ([OpenAI Platform][2])
+
+**Week 4**
+
+* Billing hooks, rate limiting, abuse checks
+* Polishing, presets for common creators
+
+# 14) Contract-ready API shapes
+
+**Create project**
+
+```http
+POST /project
+{
+  "mode": "design",
+  "platform": "youtube",
+  "size": {"w":1280,"h":720},
+  "headline": "STOP DOING THIS",
+  "subtext": "AI portfolio mistakes",
+  "vibe": ["bold","tech","high-contrast"],
+  "typography": {"stroke":6,"shadow":true,"condensed":true},
+  "model_pref": "auto",
+  "refs": ["asset_id1","asset_id2"],
+  "copy_target": null
+}
+```
+
+**Queue job**
+
+```http
+POST /project/{id}/queue
+{
+  "quality":"std",
+  "variants":4,
+  "seed": 12345
+}
+```
+
+**Job status**
+
+```json
+{
+  "id":"job_abc",
+  "status":"running",
+  "progress":0.67,
+  "est_credits":2,
+  "provider":"flux_schnell+instantid"
+}
+```
+
+# 15) What you actually build first
+
+* Single model path that always works: **FLUX.1 schnell + InstantID** with 1080×1920 and 1280×720 presets. It is fast, cheap, and gives you identity stability and decent style control out of the gate. ([Replicate][6])
+* Seedream 4.0 as the “copy thumbnail” premium switch for better consistency. ([blog.fal.ai][3])
+* GPT-Image 1 only for text overlays and surgical edits. ([OpenAI Platform][2])
+
+If “Nano Banana Pro” access is real for you, great, but treat it as experimental and keep a feature flag until the supply is dependable. ([blog.google][4])
+
+-----
+NOTICE
+____
+carefully read all the document of this @docs  folder to getth te understanding ofthis thing like for all the providers and models that we have okay and to be able to generate the images with them okay. first priority is to intrergate the geminis all image genreation models okay. with al the features 
+
+____
+second thing is for the backend arranget hings proper in the utls and modular code and speare resuabe struutre nad error nhandling and proepr plogging for stuff okay. everything okay. like proepr routes folder and utils and app and deps and other the things liek a professioanl backend okay and create a envexample to see that and use python-dotenv to usethe enviroement variables and stuff , for databse lets use supaabse okay use officla sdk of supaabse.
+
+
+You now have the roadmap, the forms, the routing, and the skeleton code plan. Build it, then obsess over presets and defaults, not 500 toggles that paralyze users.
+
+[1]: https://github.com/black-forest-labs/flux?utm_source=chatgpt.com "black-forest-labs/flux: Official inference repo for FLUX.1 ..."
+[2]: https://platform.openai.com/docs/guides/image-generation?utm_source=chatgpt.com "Image generation - OpenAI API"
+[3]: https://blog.fal.ai/seedream-4-0-on-fal-fast-consistent-4k-ready-image-creation/?utm_source=chatgpt.com "Seedream 4.0 on fal: Fast, Consistent, 4K-Ready Image ..."
+[4]: https://blog.google/technology/ai/nano-banana-pro/?utm_source=chatgpt.com "Introducing Nano Banana Pro"
+[5]: https://arxiv.org/abs/2401.07519?utm_source=chatgpt.com "InstantID: Zero-shot Identity-Preserving Generation in Seconds"
+[6]: https://replicate.com/black-forest-labs/flux-schnell?utm_source=chatgpt.com "FLUX.1 [schnell] | Text to Image"
+[7]: https://indiatimes.com/trending/is-nano-banana-ai-3d-figurines-the-safest-tool-yet-google-gemini-craze-goes-viral-yet-invisible-watermark-hints-at-a-bigger-story-669977.html?utm_source=chatgpt.com "Is Nano Banana AI 3D figurines the safest tool yet? - Google Gemini craze goes viral, yet invisible watermark hints at a bigger story"
+[8]: https://huggingface.co/black-forest-labs/FLUX.1-schnell?utm_source=chatgpt.com "black-forest-labs/FLUX.1-schnell"
