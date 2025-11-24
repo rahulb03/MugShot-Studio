@@ -1,14 +1,14 @@
 # MugShot Studio
 
-Transform your photos into high-definition, AI-crafted portraits in seconds.
+Transform your photos into high-definition, AI-crafted thumbnails in seconds.
 
 ![MugShot Studio Banner](https://placehold.co/800x400/0f7d70/white?text=MugShot+Studio)
 
-MugShot Studio is an innovative AI-powered platform that converts your regular photos into professional-quality portraits. Leveraging cutting-edge artificial intelligence, our service delivers stunning results in just seconds.
+MugShot Studio is an innovative AI-powered platform that converts your regular photos into professional-quality thumbnails. Leveraging cutting-edge artificial intelligence, our service delivers stunning results in just seconds.
 
 ## Features
 
-- **AI-Powered Transformation**: Advanced algorithms convert standard photos into professional portraits
+- **AI-Powered Transformation**: Advanced algorithms convert standard photos into professional thumbnails
 - **Ultra HD Output**: Generate 4K quality images for the best visual experience
 - **Fast Processing**: Transform your photos in just 5 seconds
 - **Multiple Platform Presets**: Choose from 10+ platform-specific presets for optimal results

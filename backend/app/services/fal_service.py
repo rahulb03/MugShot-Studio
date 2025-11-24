@@ -31,9 +31,9 @@ class FalService:
         aspect_ratio_map = {
             "1:1": "square_hd",
             "16:9": "landscape_16_9",
-            "9:16": "portrait_16_9",
+            "9:16": "thumbnail_16_9",
             "3:2": "landscape_3_2",
-            "2:3": "portrait_3_2"
+            "2:3": "thumbnail_3_2"
         }
         
         image_size = aspect_ratio_map.get(aspect_ratio, "landscape_16_9")

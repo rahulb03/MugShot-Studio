@@ -44,7 +44,7 @@ Routing rules, pragmatic:
 
 * Platform: YouTube, Instagram Post, Reels, X header, WhatsApp banner, Custom.
 * Size: presets above or custom W×H.
-* Orientation: portrait, landscape, square.
+* Orientation: thumbnail, landscape, square.
 * Safe content filter: standard, strict.
 
 **Section B. Creative brief**
