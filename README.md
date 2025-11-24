@@ -2,7 +2,8 @@
 
 Transform your photos into high-definition, AI-crafted thumbnails in seconds.
 
-![MugShot Studio Banner](https://placehold.co/800x400/0f7d70/white?text=MugShot+Studio)
+<img width="1893" height="913" alt="image" src="https://github.com/user-attachments/assets/5b1463fa-7c65-4f3e-bc1e-80f3c21cfaed" />
+
 
 MugShot Studio is an innovative AI-powered platform that converts your regular photos into professional-quality thumbnails. Leveraging cutting-edge artificial intelligence, our service delivers stunning results in just seconds.
 
