@@ -67,7 +67,8 @@ async def signup(payload: UserSignup, background_tasks: BackgroundTasks, redis: 
         "username": payload.username,
         "full_name": payload.full_name,
         "dob": payload.dob.isoformat(),
-        "email_confirmed": False
+        "email_confirmed": False,
+        "credits": 100  # Give new users 100 credits to start with
     }
     
     try:
@@ -91,6 +92,14 @@ async def signup(payload: UserSignup, background_tasks: BackgroundTasks, redis: 
         
         return {"user_id": new_user["id"], "next": "confirm_email"}
     except Exception as e:
+        # Log the actual error for debugging
+        print(f"Signup error: {str(e)}")
+        # Check if it's a row-level security error
+        if "row-level security policy" in str(e).lower():
+            raise HTTPException(
+                status_code=500, 
+                detail="Database permission error. Please contact support."
+            )
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/signin", dependencies=[Depends(RateLimiter(times=5, seconds=60))])

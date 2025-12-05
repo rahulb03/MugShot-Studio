@@ -21,12 +21,14 @@ class Settings(BaseSettings):
     # Supabase
     SUPABASE_URL: str
     SUPABASE_KEY: str
+    SUPABASE_SERVICE_ROLE_KEY: str = None
     JWT_SECRET: str
 
     # Providers
     GEMINI_API_KEY: str
     BYTEDANCE_API_KEY: str
     FAL_KEY: str
+    IMAGEROUTER_API_KEY: Union[str, None] = None
 
     # Redis/Celery
     REDIS_URL: str = "redis://localhost:6379/0"
@@ -37,6 +39,7 @@ class Settings(BaseSettings):
     class Config:
         case_sensitive = True
         env_file = ".env"
+        extra = "ignore"
 
 @lru_cache()
 def get_settings():

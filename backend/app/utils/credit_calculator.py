@@ -1,5 +1,12 @@
 from typing import Dict, Any
 
+
+class InsufficientCreditsException(Exception):
+    """Raised when a user doesn't have enough credits to perform an action."""
+    """ implement later"""
+    pass
+
+
 # Credit costs based on the documentation
 CREDIT_COSTS = {
     "draft": 1,        # Draft 512-768px: 1 credit
