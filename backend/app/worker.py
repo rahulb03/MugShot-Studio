@@ -8,6 +8,7 @@ from app.services.gemini_service import GeminiService
 from app.services.bytedance_service import ByteDanceService
 from app.services.fal_service import FalService
 from app.utils.credit_calculator import calculate_job_credits, InsufficientCreditsException
+from app.core.storage import StorageConfig
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +90,7 @@ def generate_thumbnail_task(self, job_id: str):
                 if asset_res.data:
                     path = asset_res.data[0]["path"]
                     # Download
-                    file_bytes = supabase.storage.from_("assets").download(path)
+                    file_bytes = supabase.storage.from_(StorageConfig.USER_ASSETS_BUCKET).download(path)
                     ref_images.append(file_bytes)
                     ref_images_b64.append(base64.b64encode(file_bytes).decode('utf-8'))
         
@@ -187,9 +188,9 @@ def generate_thumbnail_task(self, job_id: str):
                 else:
                     img_bytes = img_data
             
-            # Upload Render
+            # Upload Render using centralized configuration
             file_name = f"renders/{job_id}_{i}.png"
-            supabase.storage.from_("renders").upload(
+            supabase.storage.from_(StorageConfig.RENDERS_BUCKET).upload(
                 path=file_name,
                 file=img_bytes,
                 file_options={"content-type": "image/png"}

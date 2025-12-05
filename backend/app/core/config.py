@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     SUPABASE_URL: str
     SUPABASE_KEY: str
     SUPABASE_SERVICE_ROLE_KEY: str = None
+    PROFILE_PHOTOS_BUCKET: str = "profile_photos"
+    USER_ASSETS_BUCKET: str = "user_assets"
+    RENDERS_BUCKET: str = "renders"
     JWT_SECRET: str
 
     # Providers

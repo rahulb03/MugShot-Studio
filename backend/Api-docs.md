@@ -1,6 +1,6 @@
 # MugShot Studio API Documentation & Postman Testing Guide
 
-This guide provides step-by-step instructions on how to test the Authentication and Profile Management endpoints using Postman.
+This guide provides step-by-step instructions on how to test the Authentication endpoints using Postman.
 
 **Base URL:** `http://localhost:8000` (assuming default local setup)
 
@@ -78,6 +78,16 @@ Registers a new user account.
 
 **Important Configuration Note:**
 The application requires proper Supabase configuration with a service role key to bypass row-level security policies. Ensure your `.env` file includes `SUPABASE_SERVICE_ROLE_KEY` with the appropriate key from your Supabase dashboard.
+
+Additionally, the application uses three storage buckets:
+- `profile_photos` - for user profile pictures
+- `user_assets` - for general user assets
+- `renders` - for generated thumbnail images
+
+These can be customized via environment variables:
+- `PROFILE_PHOTOS_BUCKET`
+- `USER_ASSETS_BUCKET` 
+- `RENDERS_BUCKET`
 
 **Error Response (500 Internal Server Error):**
 If there are database permission issues, the server will return a more descriptive error message to help with troubleshooting.
@@ -241,7 +251,7 @@ Retrieves the authenticated user's profile information.
 
 *   **Method:** `GET`
 *   **URL:** `{{base_url}}/api/v1/profile/`
-*   **Description:** Gets current user profile details.
+*   **Description:** Gets the current user's profile.
 *   **Auth:** Required (Bearer Token)
 
 **Postman Instructions:**
@@ -327,7 +337,7 @@ Uploads a profile picture for the user.
 ```json
 {
     "message": "Avatar uploaded successfully",
-    "url": "https://..."
+    "url": "https://your-project.supabase.co/storage/v1/object/public/profile_photos/..."
 }
 ```
 
@@ -338,7 +348,7 @@ Removes the user's profile picture.
 
 *   **Method:** `DELETE`
 *   **URL:** `{{base_url}}/api/v1/profile/avatar`
-*   **Description:** Deletes the current profile photo.
+*   **Description:** Deletes the current user's profile photo.
 *   **Auth:** Required (Bearer Token)
 
 **Postman Instructions:**
@@ -358,11 +368,11 @@ Removes the user's profile picture.
 ---
 
 ## 12. Delete Account
-Deletes the authenticated user's account.
+Permanently deletes the user's account.
 
 *   **Method:** `DELETE`
 *   **URL:** `{{base_url}}/api/v1/profile/`
-*   **Description:** Permanently deletes the user account.
+*   **Description:** Deletes the current user's account and all associated data.
 *   **Auth:** Required (Bearer Token)
 
 **Postman Instructions:**
@@ -372,5 +382,44 @@ Deletes the authenticated user's account.
 4.  Paste your `access_token`.
 5.  Click **Send**.
 
-**Expected Response (204 No Content):**
-*(No body returned)*
+**Expected Response:**
+*   **Status:** 204 No Content
+
+---
+
+## 13. Upload Asset
+Uploads an asset (reference image, selfie, etc.) for use in projects.
+
+*   **Method:** `POST`
+*   **URL:** `{{base_url}}/api/v1/assets/upload`
+*   **Description:** Uploads an image file (max 8MB) for use in thumbnail generation.
+*   **Auth:** Required (Bearer Token)
+
+**Form Data:**
+*   `file`: The image file (jpg/png/webp)
+*   `type`: The asset type (`selfie`, `ref`, `copy_target`, `profile_photo`)
+
+**Postman Instructions:**
+1.  Set method to **POST**.
+2.  Enter URL: `http://localhost:8000/api/v1/assets/upload`
+3.  Go to **Authorization** tab -> Select **Bearer Token**.
+4.  Paste your `access_token`.
+5.  Go to **Body** tab -> Select **form-data**.
+6.  Add two fields:
+    *   Key: `file`, Type: **File**, Value: Select an image file
+    *   Key: `type`, Type: **Text**, Value: `ref` (or `selfie`, `copy_target`)
+7.  Click **Send**.
+
+**Expected Response (200 OK):**
+```json
+{
+    "id": "uuid...",
+    "user_id": "uuid...",
+    "type": "ref",
+    "storage_path": "user_id/ref/uuid_timestamp.jpg",
+    "width": 0,
+    "height": 0,
+    "md5": "",
+    "created_at": "2023-..."
+}
+```

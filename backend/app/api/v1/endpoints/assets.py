@@ -2,6 +2,7 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Form
 from app.core.auth import get_current_user
 from app.db.supabase import get_supabase
 from app.core.config import settings
+from app.core.storage import StorageConfig
 import uuid
 import time
 import os
@@ -25,12 +26,8 @@ async def upload_asset(
     if len(contents) > MAX_FILE_SIZE:
         raise HTTPException(status_code=400, detail="File size exceeds 8MB limit.")
     
-    # Bucket selection
-    bucket_name = "user_assets"
-    if type == "profile_photo":
-        bucket_name = "profile_photos"
-    elif type == "render":
-        bucket_name = "renders"
+    # Bucket selection using centralized configuration
+    bucket_name = StorageConfig.get_bucket_name(type)
     
     # Naming convention: {user_id}/{asset_type}/{uuid}_{timestamp}.{ext}
     ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"

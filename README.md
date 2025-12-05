@@ -78,6 +78,27 @@ MugShot Studio is an innovative AI-powered platform that converts your regular p
 
 Create a `.env` file in both frontend and backend directories with the required API keys and configuration values.
 
+### Supabase Storage Configuration
+
+The application uses three storage buckets:
+- `profile_photos` - for user profile pictures (public read, owner write)
+- `user_assets` - for general user assets (references, selfies, etc.) (private read/write for owners)
+- `renders` - for generated thumbnail images (public read, backend write only)
+
+These bucket names can be customized via environment variables:
+- `PROFILE_PHOTOS_BUCKET`
+- `USER_ASSETS_BUCKET` 
+- `RENDERS_BUCKET`
+
+To set up these buckets:
+1. Go to your Supabase Dashboard
+2. Navigate to Storage → Buckets
+3. Click "New Bucket" and create each bucket with the appropriate settings:
+   - `profile_photos`: Public bucket
+   - `user_assets`: Private bucket
+   - `renders`: Public bucket
+4. Apply the storage policies from `backend/migrations/002_storage_buckets_setup.sql` in the SQL Editor
+
 ## Project Structure
 
 ```

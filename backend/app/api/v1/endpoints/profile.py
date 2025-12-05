@@ -4,6 +4,7 @@ from typing import Optional
 from datetime import date
 from app.core.security import get_current_user
 from app.db.supabase import get_supabase
+from app.core.storage import StorageConfig
 import uuid
 
 router = APIRouter()
@@ -49,7 +50,7 @@ async def get_profile(user: dict = Depends(get_current_user)):
             # For now, let's assume we return the public URL if bucket is public
             # Or generate a signed URL valid for 1 hour
             try:
-                profile_photo_url = supabase.storage.from_("profile_photos").get_public_url(path)
+                profile_photo_url = supabase.storage.from_(StorageConfig.PROFILE_PHOTOS_BUCKET).get_public_url(path)
             except:
                 pass
 
@@ -75,29 +76,54 @@ async def update_profile(
     """
     supabase = get_supabase()
     
-    update_data = profile_update.dict(exclude_unset=True)
-    
-    if not update_data:
-        raise HTTPException(status_code=400, detail="No data provided for update")
-        
-    # Check username uniqueness if changing
-    if "username" in update_data and update_data["username"] != user["username"]:
-        check = supabase.table("users").select("id").eq("username", update_data["username"]).neq("id", user["id"]).execute()
-        if check.data:
+    # Check username uniqueness if updating
+    if profile_update.username and profile_update.username != user["username"]:
+        existing = supabase.table("users").select("id").eq("username", profile_update.username).execute()
+        if existing.data:
             raise HTTPException(status_code=409, detail="Username already taken")
-            
-    if "dob" in update_data:
-        update_data["dob"] = update_data["dob"].isoformat()
-
-    try:
-        response = supabase.table("users").update(update_data).eq("id", user["id"]).execute()
+    
+    # Prepare update data
+    update_data = {}
+    if profile_update.full_name is not None:
+        update_data["full_name"] = profile_update.full_name
+    if profile_update.username is not None:
+        update_data["username"] = profile_update.username
+    if profile_update.dob is not None:
+        update_data["dob"] = profile_update.dob.isoformat() if profile_update.dob else None
+    
+    if update_data:
+        try:
+            response = supabase.table("users").update(update_data).eq("id", user["id"]).execute()
+            updated_user = response.data[0]
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to update profile: {str(e)}")
+    else:
+        # Just fetch current data if no updates
+        response = supabase.table("users").select("*").eq("id", user["id"]).execute()
         updated_user = response.data[0]
-        
-        # Re-fetch to get formatted response similar to GET
-        return await get_profile(user=updated_user)
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    
+    # Get profile photo URL if exists
+    profile_photo_url = None
+    if updated_user.get("profile_photo_asset_id"):
+        asset_res = supabase.table("assets").select("storage_path").eq("id", updated_user["profile_photo_asset_id"]).execute()
+        if asset_res.data:
+            path = asset_res.data[0]["storage_path"]
+            try:
+                profile_photo_url = supabase.storage.from_(StorageConfig.PROFILE_PHOTOS_BUCKET).get_public_url(path)
+            except:
+                pass
+    
+    return {
+        "id": updated_user["id"],
+        "email": updated_user["email"],
+        "username": updated_user["username"],
+        "full_name": updated_user.get("full_name"),
+        "dob": updated_user.get("dob"),
+        "profile_photo_url": profile_photo_url,
+        "plan": updated_user.get("plan", "free"),
+        "credits": updated_user.get("credits", 0),
+        "created_at": updated_user["created_at"]
+    }
 
 @router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_profile(user: dict = Depends(get_current_user)):
@@ -142,8 +168,8 @@ async def upload_avatar(
     file_path = f"{user['id']}/avatar_{uuid.uuid4()}.{file_ext}"
     
     try:
-        # Upload to Supabase Storage
-        supabase.storage.from_("profile_photos").upload(
+        # Upload to Supabase Storage using centralized configuration
+        supabase.storage.from_(StorageConfig.PROFILE_PHOTOS_BUCKET).upload(
             path=file_path,
             file=content,
             file_options={"content-type": file.content_type}
@@ -165,7 +191,7 @@ async def upload_avatar(
         # Update User Profile
         supabase.table("users").update({"profile_photo_asset_id": asset_id}).eq("id", user["id"]).execute()
         
-        return {"message": "Avatar uploaded successfully", "url": supabase.storage.from_("profile_photos").get_public_url(file_path)}
+        return {"message": "Avatar uploaded successfully", "url": supabase.storage.from_(StorageConfig.PROFILE_PHOTOS_BUCKET).get_public_url(file_path)}
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -186,8 +212,8 @@ async def delete_avatar(user: dict = Depends(get_current_user)):
         if asset_res.data:
             path = asset_res.data[0]["storage_path"]
             
-            # Remove from storage
-            supabase.storage.from_("profile_photos").remove([path])
+            # Remove from storage using centralized configuration
+            supabase.storage.from_(StorageConfig.PROFILE_PHOTOS_BUCKET).remove([path])
             
             # Remove asset record (optional, or keep for history)
             supabase.table("assets").delete().eq("id", user["profile_photo_asset_id"]).execute()

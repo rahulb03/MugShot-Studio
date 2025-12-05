@@ -4,6 +4,7 @@ import {
     Modal,
     ModalBody,
     ModalContent,
+    ModalFooter,
     ModalHeader,
     ModalTitle,
 } from '@/src/components/ui/modal';
@@ -23,9 +24,22 @@ export function AuthModal(props: AuthModalProps) {
                 popoverProps={{
                     className: "bg-white border border-[#0f7d70] shadow-xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=open]:slide-in-from-bottom-2 data-[state=open]:slide-in-from-left-1/2 duration-300 rounded-xl"
                 }}
+                drawerProps={{
+                    className: "bg-white border border-[#0f7d70] shadow-xl rounded-t-xl"
+                }}
             >
-                <ModalHeader className="bg-[#f0f9f8] rounded-t-xl">
-                    <ModalTitle className="text-center text-2xl font-semibold text-[#0f7d70] py-4">
+                <ModalHeader 
+                    className="bg-[#f0f9f8] rounded-t-xl"
+                    drawerProps={{
+                        className: "bg-[#f0f9f8] rounded-t-xl border-b border-[#0f7d70]"
+                    }}
+                >
+                    <ModalTitle 
+                        className="text-center text-2xl font-semibold text-[#0f7d70] py-4"
+                        drawerProps={{
+                            className: "text-center text-2xl font-semibold text-[#0f7d70] py-4"
+                        }}
+                    >
                         Sign In or Join Now!
                     </ModalTitle>
                 </ModalHeader>
@@ -71,7 +85,12 @@ export function AuthModal(props: AuthModalProps) {
                         <span>Continue With Email</span>
                     </Button>
                 </ModalBody>
-                <div className="p-4 bg-[#f0f9f8] rounded-b-xl">
+                <ModalFooter
+                    className="p-4 bg-[#f0f9f8] rounded-b-xl"
+                    drawerProps={{
+                        className: "p-4 bg-[#f0f9f8] rounded-b-xl border-t border-[#0f7d70]"
+                    }}
+                >
                     <p className="text-[#0f7d70] text-center text-xs">
                         By clicking Continue, you agree to our{' '}
                         <Link className="text-[#0f7d70] hover:underline font-bold" href="/policy">
@@ -79,7 +98,7 @@ export function AuthModal(props: AuthModalProps) {
                         </Link>
                         .
                     </p>
-                </div>
+                </ModalFooter>
             </ModalContent>
         </Modal>
     );
