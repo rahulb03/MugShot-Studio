@@ -43,7 +43,7 @@ Registers a new user account.
 
 *   **Method:** `POST`
 *   **URL:** `{{base_url}}/api/v1/auth/signup`
-*   **Description:** Creates a new user account. New users receive 100 free credits upon registration.
+*   **Description:** Creates a new user account. New users receive 100 free credits upon registration. Email confirmation is no longer required.
 
 **Request Body (JSON):**
 ```json
@@ -68,10 +68,13 @@ Registers a new user account.
 ```json
 {
   "user_id": "uuid-string...",
-  "next": "confirm_email"
+  "access_token": "eyJhbG...",
+  "token_type": "bearer",
+  "user": { ... },
+  "next": "dashboard"
 }
 ```
-*Note: Check your backend logs (terminal) for the simulated confirmation link/token if email service isn't configured.*
+*Note: Users are automatically logged in after signup. No email confirmation required.*
 
 **Important Configuration Note:**
 The application requires proper Supabase configuration with a service role key to bypass row-level security policies. Ensure your `.env` file includes `SUPABASE_SERVICE_ROLE_KEY` with the appropriate key from your Supabase dashboard.
@@ -111,7 +114,7 @@ Logs in the user and returns an access token.
 
 *   **Method:** `POST`
 *   **URL:** `{{base_url}}/api/v1/auth/signin`
-*   **Description:** Authenticates the user.
+*   **Description:** Authenticates the user. Email confirmation is no longer required for login.
 
 **Request Body (JSON):**
 ```json

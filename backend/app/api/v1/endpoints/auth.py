@@ -67,7 +67,7 @@ async def signup(payload: UserSignup, background_tasks: BackgroundTasks, redis: 
         "username": payload.username,
         "full_name": payload.full_name,
         "dob": payload.dob.isoformat(),
-        "email_confirmed": False,
+        "email_confirmed": True,  # Set to True to skip email confirmation
         "credits": 100  # Give new users 100 credits to start with
     }
     
@@ -75,12 +75,7 @@ async def signup(payload: UserSignup, background_tasks: BackgroundTasks, redis: 
         response = supabase.table("users").insert(user_data).execute()
         new_user = response.data[0]
         
-        # Generate confirmation token
-        token = secrets.token_urlsafe(32)
-        await redis.setex(f"confirm_email:{token}", 600, new_user["id"]) # 10 mins
-        
-        # Simulate sending email
-        print(f"DEBUG: Confirmation Link: /auth/confirm?token={token}")
+        # Skip confirmation token generation and email sending
         
         # Audit Log
         supabase.table("audit").insert({
@@ -90,7 +85,15 @@ async def signup(payload: UserSignup, background_tasks: BackgroundTasks, redis: 
             "meta": {"email": payload.email}
         }).execute()
         
-        return {"user_id": new_user["id"], "next": "confirm_email"}
+        # Return access token directly for immediate login
+        access_token = create_access_token(data={"sub": new_user["id"]})
+        return {
+            "user_id": new_user["id"], 
+            "access_token": access_token, 
+            "token_type": "bearer",
+            "user": new_user,
+            "next": "dashboard"  # Redirect to dashboard instead of confirm_email
+        }
     except Exception as e:
         # Log the actual error for debugging
         print(f"Signup error: {str(e)}")
@@ -113,9 +116,6 @@ async def signin(payload: UserSignin):
     if not verify_password(payload.password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    if not user["email_confirmed"]:
-        raise HTTPException(status_code=403, detail="Email not confirmed. Please verify your email.")
-
     access_token = create_access_token(data={"sub": user["id"]})
     return {"access_token": access_token, "token_type": "bearer", "user": user}
 

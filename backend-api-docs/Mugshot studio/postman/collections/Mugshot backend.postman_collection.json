@@ -7,6 +7,7 @@
   "item": [
     {
       "name": "Auth Start",
+      "id": "d62f5d40-a737-41b9-99a3-125251259d89",
       "request": {
         "method": "POST",
         "header": [
@@ -26,14 +27,22 @@
         },
         "url": {
           "raw": "{{base_url}}/api/v1/auth/start",
-          "host": ["{{base_url}}"],
-          "path": ["api", "v1", "auth", "start"]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "start"
+          ]
         },
         "description": "Checks if a user exists and determines the next step (login or signup)."
       }
     },
     {
       "name": "Signup",
+      "id": "062084dd-587b-4809-a8e2-15c627317bdd",
       "request": {
         "method": "POST",
         "header": [
@@ -53,14 +62,22 @@
         },
         "url": {
           "raw": "{{base_url}}/api/v1/auth/signup",
-          "host": ["{{base_url}}"],
-          "path": ["api", "v1", "auth", "signup"]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "signup"
+          ]
         },
         "description": "Registers a new user account."
       }
     },
     {
-      "name": "Confirm Email",
+      "name": "Confirm Email ( CS )",
+      "id": "3b853f5e-0abd-40b9-8da1-9597817df77d",
       "request": {
         "method": "POST",
         "header": [
@@ -71,8 +88,15 @@
         ],
         "url": {
           "raw": "{{base_url}}/api/v1/auth/confirm?token={{confirmation_token}}",
-          "host": ["{{base_url}}"],
-          "path": ["api", "v1", "auth", "confirm"],
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "confirm"
+          ],
           "query": [
             {
               "key": "token",
@@ -85,6 +109,7 @@
     },
     {
       "name": "Signin",
+      "id": "9168d946-6a4a-420d-8659-bff913abba65",
       "request": {
         "method": "POST",
         "header": [
@@ -104,14 +129,22 @@
         },
         "url": {
           "raw": "{{base_url}}/api/v1/auth/signin",
-          "host": ["{{base_url}}"],
-          "path": ["api", "v1", "auth", "signin"]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "signin"
+          ]
         },
         "description": "Logs in the user and returns an access token."
       }
     },
     {
       "name": "Resend Confirmation",
+      "id": "821ee738-7df2-4f66-a47e-5e9e0ee815f7",
       "request": {
         "method": "POST",
         "header": [
@@ -131,14 +164,22 @@
         },
         "url": {
           "raw": "{{base_url}}/api/v1/auth/resend-confirmation",
-          "host": ["{{base_url}}"],
-          "path": ["api", "v1", "auth", "resend-confirmation"]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "resend-confirmation"
+          ]
         },
         "description": "Resends the email confirmation link."
       }
     },
     {
       "name": "Forgot Password",
+      "id": "8d2b9dcc-3342-45d9-bdd0-db7a99a36847",
       "request": {
         "method": "POST",
         "header": [
@@ -158,14 +199,22 @@
         },
         "url": {
           "raw": "{{base_url}}/api/v1/auth/forgot-password",
-          "host": ["{{base_url}}"],
-          "path": ["api", "v1", "auth", "forgot-password"]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "forgot-password"
+          ]
         },
         "description": "Initiates the password reset flow."
       }
     },
     {
       "name": "Reset Password",
+      "id": "0d3e4b7e-884c-4548-9205-e352b9cbc163",
       "request": {
         "method": "POST",
         "header": [
@@ -185,8 +234,15 @@
         },
         "url": {
           "raw": "{{base_url}}/api/v1/auth/reset-password",
-          "host": ["{{base_url}}"],
-          "path": ["api", "v1", "auth", "reset-password"]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "reset-password"
+          ]
         },
         "description": "Sets a new password using the reset token."
       }
@@ -194,16 +250,19 @@
   ],
   "variable": [
     {
+      "id": "1699bb3e-ff39-4fd9-9caf-30acd54b4154",
       "key": "base_url",
       "value": "http://localhost:8000",
       "type": "string"
     },
     {
+      "id": "6455e01b-373c-4dfa-9e18-6c82ccdb5a84",
       "key": "confirmation_token",
       "value": "",
       "type": "string"
     },
     {
+      "id": "2063940e-273c-416b-a4d9-8b117731e4af",
       "key": "reset_token",
       "value": "",
       "type": "string"
