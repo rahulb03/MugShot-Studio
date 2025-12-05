@@ -4,6 +4,7 @@ import {
     Modal,
     ModalBody,
     ModalContent,
+    ModalDescription,
     ModalFooter,
     ModalHeader,
     ModalTitle,
@@ -55,6 +56,9 @@ export function AuthModal(props: AuthModalProps) {
                     >
                         Sign In or Join Now!
                     </ModalTitle>
+                    <ModalDescription className="sr-only">
+                        Authentication modal for signing in or creating an account
+                    </ModalDescription>
                 </ModalHeader>
                 <ModalBody>
                     <Button
