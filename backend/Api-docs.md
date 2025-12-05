@@ -1,6 +1,6 @@
 # MugShot Studio API Documentation & Postman Testing Guide
 
-This guide provides step-by-step instructions on how to test the Authentication endpoints using Postman.
+This guide provides step-by-step instructions on how to test the Authentication and Profile Management endpoints using Postman.
 
 **Base URL:** `http://localhost:8000` (assuming default local setup)
 
@@ -233,3 +233,144 @@ Sets a new password using the reset token.
   "message": "Password reset successfully"
 }
 ```
+
+---
+
+## 8. Get Profile
+Retrieves the authenticated user's profile information.
+
+*   **Method:** `GET`
+*   **URL:** `{{base_url}}/api/v1/profile/`
+*   **Description:** Gets current user profile details.
+*   **Auth:** Required (Bearer Token)
+
+**Postman Instructions:**
+1.  Set method to **GET**.
+2.  Enter URL: `http://localhost:8000/api/v1/profile/`
+3.  Go to **Authorization** tab -> Select **Bearer Token**.
+4.  Paste your `access_token`.
+5.  Click **Send**.
+
+**Expected Response (200 OK):**
+```json
+{
+    "id": "uuid...",
+    "email": "user@example.com",
+    "username": "cooluser123",
+    "full_name": "John Doe",
+    "dob": "1990-01-01",
+    "profile_photo_url": null,
+    "plan": "free",
+    "credits": 100,
+    "created_at": "2023-..."
+}
+```
+
+---
+
+## 9. Update Profile
+Updates the authenticated user's profile information.
+
+*   **Method:** `PUT`
+*   **URL:** `{{base_url}}/api/v1/profile/`
+*   **Description:** Updates profile fields (username, full_name, dob).
+*   **Auth:** Required (Bearer Token)
+
+**Request Body (JSON):**
+```json
+{
+  "full_name": "Jane Doe",
+  "username": "newusername123"
+}
+```
+
+**Postman Instructions:**
+1.  Set method to **PUT**.
+2.  Enter URL: `http://localhost:8000/api/v1/profile/`
+3.  Go to **Authorization** tab -> Select **Bearer Token**.
+4.  Paste your `access_token`.
+5.  Go to **Body** tab -> Select **raw** -> Select **JSON**.
+6.  Paste the JSON above.
+7.  Click **Send**.
+
+**Expected Response (200 OK):**
+```json
+{
+    "id": "uuid...",
+    "email": "user@example.com",
+    "username": "newusername123",
+    "full_name": "Jane Doe",
+    ...
+}
+```
+
+---
+
+## 10. Upload Avatar
+Uploads a profile picture for the user.
+
+*   **Method:** `POST`
+*   **URL:** `{{base_url}}/api/v1/profile/avatar`
+*   **Description:** Uploads an image file (max 5MB).
+*   **Auth:** Required (Bearer Token)
+
+**Postman Instructions:**
+1.  Set method to **POST**.
+2.  Enter URL: `http://localhost:8000/api/v1/profile/avatar`
+3.  Go to **Authorization** tab -> Select **Bearer Token**.
+4.  Paste your `access_token`.
+5.  Go to **Body** tab -> Select **form-data**.
+6.  Key: `file`, Type: **File**, Value: Select an image file (jpg/png).
+7.  Click **Send**.
+
+**Expected Response (200 OK):**
+```json
+{
+    "message": "Avatar uploaded successfully",
+    "url": "https://..."
+}
+```
+
+---
+
+## 11. Delete Avatar
+Removes the user's profile picture.
+
+*   **Method:** `DELETE`
+*   **URL:** `{{base_url}}/api/v1/profile/avatar`
+*   **Description:** Deletes the current profile photo.
+*   **Auth:** Required (Bearer Token)
+
+**Postman Instructions:**
+1.  Set method to **DELETE**.
+2.  Enter URL: `http://localhost:8000/api/v1/profile/avatar`
+3.  Go to **Authorization** tab -> Select **Bearer Token**.
+4.  Paste your `access_token`.
+5.  Click **Send**.
+
+**Expected Response (200 OK):**
+```json
+{
+    "message": "Avatar removed successfully"
+}
+```
+
+---
+
+## 12. Delete Account
+Deletes the authenticated user's account.
+
+*   **Method:** `DELETE`
+*   **URL:** `{{base_url}}/api/v1/profile/`
+*   **Description:** Permanently deletes the user account.
+*   **Auth:** Required (Bearer Token)
+
+**Postman Instructions:**
+1.  Set method to **DELETE**.
+2.  Enter URL: `http://localhost:8000/api/v1/profile/`
+3.  Go to **Authorization** tab -> Select **Bearer Token**.
+4.  Paste your `access_token`.
+5.  Click **Send**.
+
+**Expected Response (204 No Content):**
+*(No body returned)*

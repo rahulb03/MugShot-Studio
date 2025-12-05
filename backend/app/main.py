@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api.v1.endpoints import projects, jobs, assets, auth, chat
+from app.api.v1.endpoints import projects, jobs, assets, auth, chat, profile
 
 from app.core.logging import setup_logging
 
@@ -27,6 +27,7 @@ app.include_router(projects.router, prefix=f"{settings.API_V1_STR}/projects", ta
 app.include_router(jobs.router, prefix=f"{settings.API_V1_STR}/jobs", tags=["jobs"])
 app.include_router(assets.router, prefix=f"{settings.API_V1_STR}/assets", tags=["assets"])
 app.include_router(chat.router, prefix=f"{settings.API_V1_STR}/chat", tags=["chat"])
+app.include_router(profile.router, prefix=f"{settings.API_V1_STR}/profile", tags=["profile"])
 
 @app.get("/")
 def read_root():

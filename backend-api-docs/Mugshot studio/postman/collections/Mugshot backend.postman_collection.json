@@ -56,7 +56,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"securepassword123\",\n  \"confirm_password\": \"securepassword123\",\n  \"username\": \"cooluser123\",\n  \"full_name\": \"John Doe\",\n  \"dob\": \"1990-01-01\"\n}",
+              "raw": "{\n  \"email\": \"testingwebsite@spicysoda.com\",\n  \"password\": \"securepassword123\",\n  \"confirm_password\": \"securepassword123\",\n  \"username\": \"cooluser123\",\n  \"full_name\": \"John Doe\",\n  \"dob\": \"1990-01-01\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -123,7 +123,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"securepassword123\"\n}",
+              "raw": "{\n  \"email\": \"testingwebsite@spicysoda.com\",\n  \"password\": \"securepassword123\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -252,26 +252,201 @@
         }
       ],
       "id": "9b01739b-286b-4999-bd54-f0e40d020eea"
+    },
+    {
+      "name": "PROFILE",
+      "item": [
+        {
+          "name": "Get Profile",
+          "id": "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "profile"
+              ]
+            },
+            "description": "Retrieves the authenticated user's profile information."
+          }
+        },
+        {
+          "name": "Update Profile",
+          "id": "b2c3d4e5-f6a7-4b5c-9d0e-1f2a3b4c5d6e",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Jane Doe\",\n  \"username\": \"janedoe123\",\n  \"bio\": \"Software developer and API enthusiast\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "profile"
+              ]
+            },
+            "description": "Updates the authenticated user's profile information."
+          }
+        },
+        {
+          "name": "Upload Profile Picture",
+          "id": "c3d4e5f6-a7b8-4c5d-0e1f-2a3b4c5d6e7f",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "profile_picture",
+                  "type": "file"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/profile/picture",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "profile",
+                "picture"
+              ]
+            },
+            "description": "Uploads a new profile picture for the authenticated user."
+          }
+        },
+        {
+          "name": "Delete Profile Picture",
+          "id": "d4e5f6a7-b8c9-4d5e-1f2a-3b4c5d6e7f8a",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/profile/picture",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "profile",
+                "picture"
+              ]
+            },
+            "description": "Deletes the authenticated user's profile picture."
+          }
+        },
+        {
+          "name": "Change Password",
+          "id": "e5f6a7b8-c9d0-4e5f-2a3b-4c5d6e7f8a9b",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"securepassword123\",\n  \"new_password\": \"newsecurepassword789\",\n  \"confirm_password\": \"newsecurepassword789\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/profile/change-password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "profile",
+                "change-password"
+              ]
+            },
+            "description": "Changes the authenticated user's password."
+          }
+        }
+      ],
+      "id": "f6a7b8c9-d0e1-4f5a-3b4c-5d6e7f8a9b0c"
     }
   ],
   "variable": [
     {
-      "id": "6aa8de42-702c-46ea-99fe-f543cb4d51ae",
+      "id": "104e4cd7-64a7-4e65-a97f-cfd301645cf3",
       "key": "base_url",
       "value": "http://localhost:8000",
       "type": "string"
     },
     {
-      "id": "91dd9339-b25f-4102-a26e-d63420536db3",
+      "id": "34711b44-e26f-4246-91f7-906e509f9172",
       "key": "confirmation_token",
       "value": "",
       "type": "string"
     },
     {
-      "id": "ca2ba821-b0c6-4154-94c6-bb342edeb4f6",
+      "id": "73ad2ef6-2e39-430c-992c-05d38aa47c45",
       "key": "reset_token",
       "value": "",
       "type": "string"
+    },
+    {
+      "id": "64d27340-5fad-4ec1-89ce-f8f300fcc83e",
+      "key": "access_token",
+      "value": "",
+      "type": "default"
     }
   ]
 }
