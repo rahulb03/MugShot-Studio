@@ -2,24 +2,25 @@ from pydantic_settings import BaseSettings
 from functools import lru_cache
 from typing import List, Union
 from pydantic import AnyHttpUrl, validator
-import json
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "Tmughsot studio"
+    PROJECT_NAME: str = "MugShot Studio"
     API_V1_STR: str = "/api/v1"
 
-    # CORS
-    BACKEND_CORS_ORIGINS: List[str] = []
-
-    @validator("BACKEND_CORS_ORIGINS", pre=True)
-    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
-        if isinstance(v, str) and not v.startswith("["):
-            return [i.strip() for i in v.split(",")]
-        elif isinstance(v, (list, str)):
-            if isinstance(v, str) and v.startswith("["):
-                return json.loads(v)
-            return v
-        raise ValueError(v)
+    # CORS - Get directly from environment without Pydantic parsing
+    @property
+    def BACKEND_CORS_ORIGINS(self) -> List[str]:
+        cors_origins = os.getenv("BACKEND_CORS_ORIGINS", "")
+        # Remove surrounding quotes if present
+        if cors_origins.startswith('"') and cors_origins.endswith('"'):
+            cors_origins = cors_origins[1:-1]
+        # Return as list with single URL
+        return [cors_origins] if cors_origins else []
 
     # Supabase
     SUPABASE_URL: str
