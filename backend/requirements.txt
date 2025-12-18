@@ -1,6 +1,6 @@
 # Core Framework
 fastapi
-uvicorn[standard]
+uvicorn
 pydantic-settings
 python-dotenv
 python-multipart
@@ -14,8 +14,6 @@ python-jose[cryptography]
 passlib[bcrypt]
 
 # AI Providers
-google-generativeai
-fal-client
 
 # Upstash Redis (Serverless-compatible)
 upstash-redis
