@@ -4,7 +4,7 @@ from db.supabase import get_supabase
 from utils.credit_calculator import calculate_job_credits, get_model_info
 from utils.exceptions import handle_exception, InsufficientCreditsException
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from services.background_tasks import process_thumbnail_job_sync
 from core.ratelimit import RateLimiter
 import logging
