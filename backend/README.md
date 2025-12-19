@@ -147,7 +147,7 @@ Check if user exists by email.
   ```
 
 #### POST `/api/v1/auth/signup`
-Create a new user account.
+Create a new user account using Supabase Auth.
 - **Request Body**: 
   ```json
   {
@@ -160,7 +160,7 @@ Create a new user account.
     "newsletterOptIn": false
   }
   ```
-- **Response**: `{ "user_id": "uuid", "message": "User created successfully. Please check your email for confirmation code.", "next": "confirm_email" }`
+- **Response**: `{ "user_id": "uuid", "message": "User created successfully. Please check your email for confirmation.", "next": "confirm_email" }`
 - **Example**:
   ```bash
   curl -X POST "http://localhost:8000/api/v1/auth/signup" \
@@ -177,12 +177,13 @@ Create a new user account.
   ```
 
 #### POST `/api/v1/auth/verify-otp`
-Verify email with OTP code.
+Verify email with OTP code sent by Supabase Auth.
 - **Request Body**: 
   ```json
   {
     "email": "user@example.com",
-    "code": "123456"
+    "token": "123456",
+    "type": "email"
   }
   ```
 - **Response**: `{ "user_id": "uuid", "access_token": "jwt_token", "token_type": "bearer", "user": {user_object}, "message": "Email verified successfully" }`
@@ -193,7 +194,8 @@ Verify email with OTP code.
     -H "Content-Type: application/json" \
     -d '{
       "email": "user@example.com",
-      "code": "123456"
+      "token": "123456",
+      "type": "email"
     }'
   ```
 
@@ -207,7 +209,7 @@ Check if username is available.
   ```
 
 #### POST `/api/v1/auth/resend-confirmation`
-Resend OTP code to email.
+Resend OTP code via Supabase Auth.
 - **Request Body**: `{ "email": "user@example.com" }`
 - **Response**: `{ "message": "If account exists, confirmation email sent" }`
 - **Authentication**: None
@@ -219,7 +221,7 @@ Resend OTP code to email.
   ```
 
 #### POST `/api/v1/auth/signin`
-Sign in to an existing account.
+Sign in to an existing account using Supabase Auth.
 - **Request Body**: 
   ```json
   {
@@ -240,16 +242,16 @@ Sign in to an existing account.
     }'
   ```
 
-#### POST `/api/v1/auth/confirm`
-Confirm email address.
-- **Request Body**: `{ "token": "confirmation_token" }`
-- **Response**: `{ "message": "Email confirmed" }`
+#### POST `/api/v1/auth/forgot-password`
+Initiate password reset via Supabase Auth.
+- **Request Body**: `{ "email": "user@example.com" }`
+- **Response**: `{ "message": "If account exists, reset instructions sent" }`
 - **Authentication**: None
 - **Example**:
   ```bash
-  curl -X POST "http://localhost:8000/api/v1/auth/confirm" \
+  curl -X POST "http://localhost:8000/api/v1/auth/forgot-password" \
     -H "Content-Type: application/json" \
-    -d '{"token": "confirmation_token"}'
+    -d '{"email": "user@example.com"}'
   ```
 
 ### Projects

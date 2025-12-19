@@ -1,13 +1,12 @@
 from fastapi import APIRouter, HTTPException, status, Depends, BackgroundTasks
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from db.supabase import get_supabase
-from core.auth import get_password_hash, verify_password, create_access_token
 from core.redis import get_redis
 from core.ratelimit import RateLimiter
 from datetime import date
 import secrets
 import random
-from typing import Any
+from typing import Any, Optional
 import logging
 
 logger = logging.getLogger(__name__)
@@ -36,6 +35,11 @@ class UserSignin(BaseModel):
     email: EmailStr
     password: str
 
+class UserSigninOtp(BaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+    
+    email: EmailStr
+
 class AuthStart(BaseModel):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
     
@@ -62,7 +66,13 @@ class VerifyOTP(BaseModel):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
     
     email: EmailStr
-    code: str
+    token: str
+    type: str = "email"  # email, recovery, invite, email_change
+
+class SupabaseAuthResponse(BaseModel):
+    user: Optional[dict] = None
+    session: Optional[dict] = None
+    message: Optional[str] = None
 
 @router.post("/start")
 async def auth_start(payload: AuthStart):
@@ -70,228 +80,197 @@ async def auth_start(payload: AuthStart):
     response = supabase.table("users").select("id, password_hash").eq("email", payload.email).execute()
     if response.data:
         user = response.data[0]
-        if user.get("password_hash"):
-            return {"exists": True, "next": "password"}
-        else:
-            return {"exists": True, "next": "social_login"}
+        # Check if user exists in Supabase Auth (simulated check via table presence for now)
+        # In a pure Supabase setup, we might rely on sign_in throwing verify error, but this check is likely fine for UI flow
+        return {"exists": True, "next": "password"}
     return {"exists": False, "next": "create_account"}
 
 @router.post("/signup", status_code=status.HTTP_201_CREATED, dependencies=[Depends(RateLimiter(times=3, seconds=60))])
-async def signup(payload: UserSignup, background_tasks: BackgroundTasks, redis: Any = Depends(get_redis)):
+async def signup(payload: UserSignup, background_tasks: BackgroundTasks):
     if payload.password != payload.confirm_password:
         raise HTTPException(status_code=400, detail="Passwords do not match")
     
     supabase = get_supabase()
-    # Check username uniqueness
-    user_check = supabase.table("users").select("id").eq("username", payload.username).execute()
-    if user_check.data:
-        raise HTTPException(status_code=409, detail="Username already taken")
-
-    # Create user
-    hashed_password = get_password_hash(payload.password)
-    user_data = {
-        "email": payload.email,
-        "password_hash": hashed_password,
-        "username": payload.username,
-        "full_name": payload.full_name,
-        "dob": payload.dob.isoformat(),
-        "email_confirmed": False,  # Require email confirmation
-        "credits": 100,  # Give new users 100 credits to start with
-        "newsletter_opt_in": payload.newsletter_opt_in
-    }
     
     try:
-        response = supabase.table("users").insert(user_data).execute()
-        new_user = response.data[0]
+        # Use Supabase Auth to sign up the user
+        auth_response = supabase.auth.sign_up({
+            "email": payload.email,
+            "password": payload.password,
+            "options": {
+                "data": {
+                    "username": payload.username,
+                    "full_name": payload.full_name,
+                    "dob": payload.dob.isoformat(),
+                    "newsletter_opt_in": payload.newsletter_opt_in
+                }
+            }
+        })
         
-        # Generate 6-digit OTP code
-        otp_code = str(random.randint(100000, 999999))
-        
-        # Store OTP in Redis with 10-minute expiration (if Redis is available)
-        if redis is not None:
-            await redis.setex(f"otp_confirm:{payload.email}", 600, otp_code)
-        
-        # Send OTP email in background
-        from utils.email_utils import send_otp_email
-        background_tasks.add_task(send_otp_email, payload.email, otp_code)
-        
-        # Audit Log
-        supabase.table("audit").insert({
-            "user_id": new_user["id"],
-            "action": "user_signup",
-            "delta_credits": 0,
-            "meta": {"email": payload.email}
-        }).execute()
-        
-        # Return response indicating email confirmation is needed
-        return {
-            "user_id": new_user["id"], 
-            "message": "User created successfully. Please check your email for confirmation code.",
-            "next": "confirm_email"
-        }
+        if auth_response.user:
+            user_id = auth_response.user.id
+            
+            # Also store additional user data in our custom users table
+            user_data = {
+                "id": user_id,  # Use the same ID as Supabase Auth
+                "email": payload.email,
+                "username": payload.username,
+                "full_name": payload.full_name,
+                "dob": payload.dob.isoformat(),
+                "email_confirmed": False,  # Will be set to True after email verification
+                "credits": 100,  # Give new users 100 credits to start with
+                "newsletter_opt_in": payload.newsletter_opt_in
+            }
+            
+            # Insert into our custom users table
+            supabase.table("users").insert(user_data).execute()
+            
+            # Audit Log
+            supabase.table("audit").insert({
+                "user_id": user_id,
+                "action": "user_signup",
+                "delta_credits": 0,
+                "meta": {"email": payload.email}
+            }).execute()
+            
+            return {
+                "user_id": user_id,
+                "message": "User created successfully. Please check your email for confirmation.",
+                "next": "confirm_email"
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Failed to create user")
+            
     except Exception as e:
         # Log the actual error for debugging
-        print(f"Signup error: {str(e)}")
-        # Check if it's a row-level security error
-        if "row-level security policy" in str(e).lower():
-            raise HTTPException(
-                status_code=500, 
-                detail="Database permission error. Please contact support."
-            )
+        logger.error(f"Signup error: {str(e)}")
+        # Check for specific error types
+        if "email" in str(e).lower() and "exists" in str(e).lower():
+            raise HTTPException(status_code=409, detail="Email already registered")
+        elif "username" in str(e).lower() and "exists" in str(e).lower():
+            raise HTTPException(status_code=409, detail="Username already taken")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/signin", dependencies=[Depends(RateLimiter(times=5, seconds=60))])
 async def signin(payload: UserSignin):
     supabase = get_supabase()
-    response = supabase.table("users").select("*").eq("email", payload.email).execute()
-    if not response.data:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    user = response.data[0]
-    if not verify_password(payload.password, user["password_hash"]):
+    try:
+        # Use Supabase Auth to sign in the user
+        auth_response = supabase.auth.sign_in_with_password({
+            "email": payload.email,
+            "password": payload.password
+        })
+        
+        if auth_response.session:
+            # Get user data from our custom table
+            user_response = supabase.table("users").select("*").eq("id", auth_response.user.id).execute()
+            user_data = user_response.data[0] if user_response.data else {}
+            
+            return {
+                "access_token": auth_response.session.access_token,
+                "token_type": "bearer",
+                "user": user_data
+            }
+        else:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+            
+    except Exception as e:
+        logger.error(f"Signin error: {str(e)}")
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
-    access_token = create_access_token(data={"sub": user["id"]})
-    return {"access_token": access_token, "token_type": "bearer", "user": user}
 
-@router.post("/confirm")
-async def confirm_email(token: str, redis: Any = Depends(get_redis)):
-    # Get stored user_id from Redis (if Redis is available)
-    user_id = None
-    if redis is not None:
-        user_id = await redis.get(f"confirm_email:{token}")
-    
-    if not user_id:
-        raise HTTPException(status_code=400, detail="Invalid or expired token")
-    
+
+@router.post("/signin-otp", dependencies=[Depends(RateLimiter(times=3, seconds=60))])
+async def signin_otp(payload: UserSigninOtp):
     supabase = get_supabase()
-    supabase.table("users").update({"email_confirmed": True}).eq("id", user_id).execute()
     
-    # Remove token from Redis (if Redis is available)
-    if redis is not None:
-        await redis.delete(f"confirm_email:{token}")
-    return {"message": "Email confirmed successfully"}
+    try:
+        # Use Supabase Auth to sign in with OTP/Magic Link
+        auth_response = supabase.auth.sign_in_with_otp({
+            "email": payload.email,
+        })
+        
+        return {"message": "Magic link or OTP sent to email"}
+            
+    except Exception as e:
+        logger.error(f"Signin OTP error: {str(e)}")
+        # Return success message even on error to prevent user enumeration (though auth_start already does checks)
+        return {"message": "Magic link or OTP sent to email"}
 
 @router.post("/verify-otp")
-async def verify_otp(payload: VerifyOTP, redis: Any = Depends(get_redis)):
-    # Get stored OTP from Redis (if Redis is available)
-    stored_otp = None
-    if redis is not None:
-        stored_otp = await redis.get(f"otp_confirm:{payload.email}")
-    
-    # In development mode without Redis, we'll accept any 6-digit code
-    if stored_otp is None:
-        # Log that we're in development mode
-        logger.warning("Redis not available - running in development mode")
-        # For development, accept the code if it's 6 digits
-        if len(payload.code) == 6 and payload.code.isdigit():
-            stored_otp = payload.code
-        else:
-            raise HTTPException(status_code=400, detail="OTP expired or not found")
-    
-    if stored_otp != payload.code:
-        raise HTTPException(status_code=400, detail="Invalid OTP code")
-    
-    # Update user as email confirmed
+async def verify_otp(payload: VerifyOTP):
     supabase = get_supabase()
-    response = supabase.table("users").select("id").eq("email", payload.email).execute()
     
-    if not response.data:
-        raise HTTPException(status_code=400, detail="User not found")
-    
-    user_id = response.data[0]["id"]
-    supabase.table("users").update({"email_confirmed": True}).eq("id", user_id).execute()
-    
-    # Remove OTP from Redis (if Redis is available)
-    if redis is not None:
-        await redis.delete(f"otp_confirm:{payload.email}")
-    
-    # Create access token for immediate login
-    access_token = create_access_token(data={"sub": user_id})
-    
-    # Get user data for response
-    user_response = supabase.table("users").select("*").eq("id", user_id).execute()
-    user = user_response.data[0]
-    
-    return {
-        "user_id": user_id, 
-        "access_token": access_token, 
-        "token_type": "bearer",
-        "user": user,
-        "message": "Email verified successfully"
-    }
+    try:
+        # Use Supabase Auth to verify OTP
+        auth_response = supabase.auth.verify_otp({
+            "email": payload.email,
+            "token": payload.token,
+            "type": payload.type
+        })
+        
+        if auth_response.user:
+            user_id = auth_response.user.id
+            
+            # Update our custom users table to mark email as confirmed
+            supabase.table("users").update({"email_confirmed": True}).eq("id", user_id).execute()
+            
+            # Get user data from our custom table
+            user_response = supabase.table("users").select("*").eq("id", user_id).execute()
+            user_data = user_response.data[0] if user_response.data else {}
+            
+            return {
+                "user_id": user_id,
+                "access_token": auth_response.session.access_token if auth_response.session else None,
+                "token_type": "bearer",
+                "user": user_data,
+                "message": "Email verified successfully"
+            }
+        else:
+            raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+            
+    except Exception as e:
+        logger.error(f"OTP verification error: {str(e)}")
+        raise HTTPException(status_code=400, detail="Invalid or expired OTP")
 
 @router.post("/resend-confirmation", dependencies=[Depends(RateLimiter(times=3, seconds=60))])
-async def resend_confirmation(payload: ResendConfirmation, background_tasks: BackgroundTasks, redis: Any = Depends(get_redis)):
+async def resend_confirmation(payload: ResendConfirmation):
     supabase = get_supabase()
-    response = supabase.table("users").select("id, email_confirmed").eq("email", payload.email).execute()
     
-    if not response.data:
-        # Return 200 to avoid user enumeration
+    try:
+        # Use Supabase Auth to resend confirmation
+        response = supabase.auth.resend({
+            "type": "signup",
+            "email": payload.email
+        })
+        
         return {"message": "If account exists, confirmation email sent"}
         
-    user = response.data[0]
-    if user["email_confirmed"]:
-        return {"message": "Email already confirmed"}
-        
-    # Generate 6-digit OTP code
-    otp_code = str(random.randint(100000, 999999))
-    
-    # Store OTP in Redis with 10-minute expiration (if Redis is available)
-    if redis is not None:
-        await redis.setex(f"otp_confirm:{payload.email}", 600, otp_code)
-    
-    # Send OTP email in background
-    from utils.email_utils import send_otp_email
-    background_tasks.add_task(send_otp_email, payload.email, otp_code)
-    
-    print(f"DEBUG: Resent OTP code: {otp_code}")
-    return {"message": "If account exists, confirmation email sent"}
+    except Exception as e:
+        logger.error(f"Resend confirmation error: {str(e)}")
+        return {"message": "If account exists, confirmation email sent"}
 
 @router.post("/forgot-password", dependencies=[Depends(RateLimiter(times=3, seconds=60))])
-async def forgot_password(payload: ForgotPassword, redis: Any = Depends(get_redis)):
+async def forgot_password(payload: ForgotPassword):
     supabase = get_supabase()
-    response = supabase.table("users").select("id").eq("email", payload.email).execute()
     
-    if response.data:
-        user = response.data[0]
-        token = secrets.token_urlsafe(32)
-        # Store token in Redis (if Redis is available)
-        if redis is not None:
-            await redis.setex(f"reset_password:{token}", 600, user["id"])
-        print(f"DEBUG: Reset Password Link: /auth/reset-password?token={token}")
-    
-    return {"message": "If account exists, reset instructions sent"}
+    try:
+        # Use Supabase Auth to send password reset email
+        response = supabase.auth.reset_password_for_email(payload.email)
+        return {"message": "If account exists, reset instructions sent"}
+        
+    except Exception as e:
+        logger.error(f"Forgot password error: {str(e)}")
+        return {"message": "If account exists, reset instructions sent"}
 
 @router.post("/reset-password")
-async def reset_password(payload: ResetPassword, redis: Any = Depends(get_redis)):
+async def reset_password(payload: ResetPassword):
+    # Note: This would typically be handled by Supabase Auth directly
+    # through their password reset flow, but keeping this for compatibility
     if payload.new_password != payload.confirm_password:
         raise HTTPException(status_code=400, detail="Passwords do not match")
         
-    # Get user_id from Redis (if Redis is available)
-    user_id = None
-    if redis is not None:
-        user_id = await redis.get(f"reset_password:{payload.token}")
-    
-    if not user_id:
-        raise HTTPException(status_code=400, detail="Invalid or expired token")
-        
-    hashed_password = get_password_hash(payload.new_password)
-    supabase = get_supabase()
-    supabase.table("users").update({"password_hash": hashed_password}).eq("id", user_id).execute()
-    
-    # Audit Log
-    supabase.table("audit").insert({
-        "user_id": user_id,
-        "action": "password_reset",
-        "delta_credits": 0,
-        "meta": {}
-    }).execute()
-    
-    # Remove token from Redis (if Redis is available)
-    if redis is not None:
-        await redis.delete(f"reset_password:{payload.token}")
-    return {"message": "Password reset successfully"}
+    raise HTTPException(status_code=400, detail="Use the password reset link sent to your email")
 
 @router.get("/check-username/{username}")
 async def check_username_availability(username: str):

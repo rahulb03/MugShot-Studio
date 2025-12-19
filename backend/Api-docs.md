@@ -43,7 +43,7 @@ Registers a new user account.
 
 *   **Method:** `POST`
 *   **URL:** `{{base_url}}/api/v1/auth/signup`
-*   **Description:** Creates a new user account. New users receive 100 free credits upon registration. Email confirmation is required using a 6-digit OTP code.
+*   **Description:** Creates a new user account using Supabase Auth. New users receive 100 free credits upon registration. Email confirmation is required using Supabase's OTP system.
 
 **Request Body (JSON):**
 ```json
@@ -69,26 +69,27 @@ Registers a new user account.
 ```json
 {
   "user_id": "uuid-string...",
-  "message": "User created successfully. Please check your email for confirmation code.",
+  "message": "User created successfully. Please check your email for confirmation.",
   "next": "confirm_email"
 }
 ```
-*Note: Users must verify their email with the 6-digit OTP code sent to their email.*
+*Note: Users must verify their email with the OTP code sent to their email by Supabase.*
 
 ---
 
 ## 3. Verify OTP
-Verifies the user's email address using the 6-digit OTP code received via email.
+Verifies the user's email address using the OTP code received via email from Supabase.
 
 *   **Method:** `POST`
 *   **URL:** `{{base_url}}/api/v1/auth/verify-otp`
-*   **Description:** Confirms the email address using the OTP code.
+*   **Description:** Confirms the email address using the OTP code sent by Supabase Auth.
 
 **Request Body (JSON):**
 ```json
 {
   "email": "user@example.com",
-  "code": "123456"
+  "token": "123456",
+  "type": "email"
 }
 ```
 
@@ -113,11 +114,11 @@ Verifies the user's email address using the 6-digit OTP code received via email.
 ---
 
 ## 4. Resend Confirmation
-Resends the email confirmation OTP code.
+Resends the email confirmation OTP code via Supabase.
 
 *   **Method:** `POST`
 *   **URL:** `{{base_url}}/api/v1/auth/resend-confirmation`
-*   **Description:** Triggers a new confirmation email with OTP code.
+*   **Description:** Triggers a new confirmation email with OTP code via Supabase Auth.
 
 **Request Body (JSON):**
 ```json
@@ -178,7 +179,7 @@ Logs in the user and returns an access token.
 
 *   **Method:** `POST`
 *   **URL:** `{{base_url}}/api/v1/auth/signin`
-*   **Description:** Authenticates the user. Email must be confirmed.
+*   **Description:** Authenticates the user using Supabase Auth.
 
 **Request Body (JSON):**
 ```json
@@ -208,11 +209,11 @@ Logs in the user and returns an access token.
 ---
 
 ## 7. Forgot Password
-Initiates the password reset flow.
+Initiates the password reset flow via Supabase.
 
 *   **Method:** `POST`
 *   **URL:** `{{base_url}}/api/v1/auth/forgot-password`
-*   **Description:** Sends a password reset link/token.
+*   **Description:** Sends a password reset link via Supabase Auth.
 
 **Request Body (JSON):**
 ```json
@@ -232,37 +233,5 @@ Initiates the password reset flow.
 ```json
 {
   "message": "If account exists, reset instructions sent"
-}
-```
-
----
-
-## 8. Reset Password
-Completes the password reset process.
-
-*   **Method:** `POST`
-*   **URL:** `{{base_url}}/api/v1/auth/reset-password`
-*   **Description:** Sets a new password using the reset token.
-
-**Request Body (JSON):**
-```json
-{
-  "token": "reset_token_from_email",
-  "newPassword": "newsecurepassword123",
-  "confirmPassword": "newsecurepassword123"
-}
-```
-
-**Postman Instructions:**
-1.  Set method to **POST**.
-2.  Enter URL: `http://localhost:8000/api/v1/auth/reset-password`
-3.  Go to **Body** tab -> Select **raw** -> Select **JSON**.
-4.  Paste the JSON above.
-5.  Click **Send**.
-
-**Expected Response (200 OK):**
-```json
-{
-  "message": "Password reset successfully"
 }
 ```
