@@ -21,6 +21,10 @@ export function Header() {
             href: '#',
         },
         {
+            label: 'Blogspace',
+            href: '/blogspace',
+        },
+        {
             label: 'Download',
             href: '/download',
         },
