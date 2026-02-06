@@ -110,7 +110,7 @@
             "content": {
               "application/json": {
                 "schema": {
-
+                  "$ref": "#/components/schemas/AuthResponse"
                 }
               }
             }
@@ -192,7 +192,7 @@
             "content": {
               "application/json": {
                 "schema": {
-
+                  "$ref": "#/components/schemas/AuthResponse"
                 }
               }
             }
@@ -886,7 +886,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/JobResponse"
+                  "$ref": "#/components/schemas/api__v1__endpoints__projects__JobResponse"
                 }
               }
             }
@@ -924,13 +924,13 @@
             }
           },
           {
-            "name": "api_key",
-            "in": "query",
+            "name": "X-API-Key",
+            "in": "header",
             "required": true,
             "schema": {
               "type": "string",
               "description": "Admin or Cron API Key",
-              "title": "Api Key"
+              "title": "X-Api-Key"
             },
             "description": "Admin or Cron API Key"
           }
@@ -999,7 +999,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/JobResponse"
+                  "$ref": "#/components/schemas/api__v1__endpoints__projects__JobResponse"
                 }
               }
             }
@@ -1252,7 +1252,7 @@
           "projects"
         ],
         "summary": "Get User Public Projects",
-        "description": "Get a user's public projects.\nBy default, only returns completed projects (status='done').\nSet include_drafts=true to include all projects.",
+        "description": "Get a user's public projects.\nBy default, only returns completed projects (status='done').\nSet include_drafts=true to include all projects.\nSet lite=true to exclude heavy prompt details (recommended for dashboards).",
         "operationId": "get_user_public_projects_api_v1_projects_user__user_id__public_get",
         "security": [
           {
@@ -1325,6 +1325,24 @@
             }
           },
           {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Search term for title, description, or tags",
+              "title": "Search"
+            },
+            "description": "Search term for title, description, or tags"
+          },
+          {
             "name": "include_drafts",
             "in": "query",
             "required": false,
@@ -1335,6 +1353,18 @@
               "title": "Include Drafts"
             },
             "description": "Include draft and failed projects"
+          },
+          {
+            "name": "lite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Exclude heavy fields like raw_jsonb for faster loading",
+              "default": false,
+              "title": "Lite"
+            },
+            "description": "Exclude heavy fields like raw_jsonb for faster loading"
           }
         ],
         "responses": {
@@ -1652,7 +1682,7 @@
           "templates"
         ],
         "summary": "Get Templates",
-        "description": "Get a paginated list of public templates.\n\n- **page**: Page number (starting from 1)\n- **limit**: Number of items per page (max 100)\n- **category**: Filter by category (optional)\n- **sort**: Sort order - trending, recent, or featured\n- **search**: Search in template titles (optional)",
+        "description": "Get a paginated list of public templates.\n\n- **page**: Page number (starting from 1)\n- **limit**: Number of items per page (max 100)\n- **category**: Filter by category (optional)\n- **sort**: Sort order - trending, recent, or featured\n- **search**: Search in title (optional)\n- **model**: Filter by AI model (optional)\n- **time_range**: Filter by creation date - week, month, year, all (optional)",
         "operationId": "get_templates_api_v1_templates__get",
         "security": [
           {
@@ -1735,6 +1765,43 @@
               "title": "Search"
             },
             "description": "Search in title"
+          },
+          {
+            "name": "model",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by model preference",
+              "title": "Model"
+            },
+            "description": "Filter by model preference"
+          },
+          {
+            "name": "time_range",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(week|month|year|all)$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by time range",
+              "title": "Time Range"
+            },
+            "description": "Filter by time range"
           }
         ],
         "responses": {
@@ -1825,7 +1892,7 @@
           "templates"
         ],
         "summary": "Get Popular Categories",
-        "description": "Get the most popular template categories with their counts.\nReturns up to 10 categories sorted by count.",
+        "description": "Get the most popular template categories with their counts.\nReturns up to 10 categories sorted by count.\nCached for 1 hour to prevent expensive aggregation.",
         "operationId": "get_popular_categories_api_v1_templates_categories_get",
         "responses": {
           "200": {
@@ -1877,7 +1944,7 @@
           "templates"
         ],
         "summary": "Get Official Templates",
-        "description": "Get templates directly from templates.json file.\nThis endpoint reads from the JSON file directly for immediate updates.",
+        "description": "Get templates directly from templates.json file.\nThis endpoint reads from the JSON file using an in-memory cache to prevent blocking IO.",
         "operationId": "get_official_templates_api_v1_templates_official_get",
         "parameters": [
           {
@@ -2175,13 +2242,13 @@
         "operationId": "sync_official_templates_api_v1_templates_sync_official_post",
         "parameters": [
           {
-            "name": "api_key",
-            "in": "query",
+            "name": "X-API-Key",
+            "in": "header",
             "required": true,
             "schema": {
               "type": "string",
               "description": "Admin or Cron API Key",
-              "title": "Api Key"
+              "title": "X-Api-Key"
             },
             "description": "Admin or Cron API Key"
           }
@@ -2434,6 +2501,181 @@
         }
       }
     },
+    "/api/v1/comments/template/{template_id}": {
+      "get": {
+        "tags": [
+          "comments"
+        ],
+        "summary": "Get Template Comments",
+        "description": "Get comments for a specific template.",
+        "operationId": "get_template_comments_api_v1_comments_template__template_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Template Id"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedComments"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "comments"
+        ],
+        "summary": "Create Comment",
+        "description": "Add a comment to a template.",
+        "operationId": "create_comment_api_v1_comments_template__template_id__post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Template Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCommentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/comments/{comment_id}": {
+      "delete": {
+        "tags": [
+          "comments"
+        ],
+        "summary": "Delete Comment",
+        "description": "Delete a comment.",
+        "operationId": "delete_comment_api_v1_comments__comment_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "comment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Comment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/jobs/": {
       "post": {
         "tags": [
@@ -2457,7 +2699,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/api__v1__endpoints__jobs__JobResponse"
+                  "$ref": "#/components/schemas/JobResponse"
                 }
               }
             }
@@ -2686,6 +2928,53 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/assets/bulk-delete": {
+      "post": {
+        "tags": [
+          "assets"
+        ],
+        "summary": "Bulk Delete Assets",
+        "description": "Delete multiple assets by ID.",
+        "operationId": "bulk_delete_assets_api_v1_assets_bulk_delete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/api__v1__endpoints__assets__BulkDeleteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     },
     "/api/v1/assets/upload": {
@@ -4220,7 +4509,8 @@
               "schema": {
                 "$ref": "#/components/schemas/ExportRequest",
                 "default": {
-                  "include_images": false
+                  "include_images": false,
+                  "format": "json"
                 }
               }
             }
@@ -6193,6 +6483,1121 @@
         }
       }
     },
+    "/api/v1/openrouter/models": {
+      "get": {
+        "tags": [
+          "openrouter"
+        ],
+        "summary": "Get Openrouter Models",
+        "description": "Get available models from OpenRouter.\n\nThis endpoint returns models that are suitable for image generation.\nWhen `mode` is 'imagine', only models with image generation capability\nare returned.\n\n**Note**: This endpoint uses the application's OpenRouter API key,\nnot user-provided keys. These models are available to all users.\n\nReturns:\n    - data: List of models with application-compatible schema\n    - total: Total number of models returned",
+        "operationId": "get_openrouter_models_api_v1_openrouter_models_get",
+        "parameters": [
+          {
+            "name": "mode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter models by mode. Use 'imagine' for image generation models only.",
+              "title": "Mode"
+            },
+            "description": "Filter models by mode. Use 'imagine' for image generation models only."
+          },
+          {
+            "name": "tier",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by tier: 'free', 'pro', or 'all'",
+              "title": "Tier"
+            },
+            "description": "Filter by tier: 'free', 'pro', or 'all'"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Openrouter Models Api V1 Openrouter Models Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/openrouter/models/imagine": {
+      "get": {
+        "tags": [
+          "openrouter"
+        ],
+        "summary": "Get Image Generation Models",
+        "description": "Get only image generation capable models from OpenRouter.\n\nThis is a convenience endpoint that returns only models with\n'image' in their output_modalities.\n\nReturns:\n    - data: List of image generation models\n    - total: Total number of models returned",
+        "operationId": "get_image_generation_models_api_v1_openrouter_models_imagine_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Image Generation Models Api V1 Openrouter Models Imagine Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/openrouter/model/{model_id}": {
+      "get": {
+        "tags": [
+          "openrouter"
+        ],
+        "summary": "Get Model Info",
+        "description": "Get information about a specific OpenRouter model.\n\nArgs:\n    model_id: The OpenRouter model ID (e.g., 'google/gemini-2.5-flash-image-preview')\n\nReturns:\n    Model information in application-compatible schema",
+        "operationId": "get_model_info_api_v1_openrouter_model__model_id__get",
+        "parameters": [
+          {
+            "name": "model_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Model Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Model Info Api V1 Openrouter Model  Model Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/openrouter/generate": {
+      "post": {
+        "tags": [
+          "openrouter"
+        ],
+        "summary": "Generate Image",
+        "description": "Generate an image using an OpenRouter model.\n\nThis endpoint uses the application's OpenRouter API key to generate\nimages. Credits are deducted from the user's account based on the\nmodel's tier.\n\n**Rate Limit**: 10 requests per minute\n\nArgs:\n    request: Image generation request with prompt, model, and options\n\nReturns:\n    - images: List of generated image URLs (base64 data URLs)\n    - model: The model used for generation\n    - prompt: The original prompt",
+        "operationId": "generate_image_api_v1_openrouter_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateImageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Generate Image Api V1 Openrouter Generate Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/openrouter/status": {
+      "get": {
+        "tags": [
+          "openrouter"
+        ],
+        "summary": "Check Openrouter Status",
+        "description": "Check if OpenRouter service is configured and operational.\n\nReturns:\n    - configured: Whether API key is set\n    - available: Whether service is reachable\n    - models_count: Number of available image generation models",
+        "operationId": "check_openrouter_status_api_v1_openrouter_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Check Openrouter Status Api V1 Openrouter Status Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/payments/credit-packs": {
+      "get": {
+        "tags": [
+          "payments"
+        ],
+        "summary": "Get Credit Packs",
+        "description": "Get available credit packs with pricing.\n\nReturns credit packs with pricing in the specified currency.\nINR is used for users in India, USD for international users.",
+        "operationId": "get_credit_packs_api_v1_payments_credit_packs_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "currency",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "INR",
+                "USD"
+              ],
+              "type": "string",
+              "description": "Currency for pricing",
+              "default": "INR",
+              "title": "Currency"
+            },
+            "description": "Currency for pricing"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CreditPackResponse"
+                  },
+                  "title": "Response Get Credit Packs Api V1 Payments Credit Packs Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/payments/credit-packs/order": {
+      "post": {
+        "tags": [
+          "payments"
+        ],
+        "summary": "Create Credit Pack Order",
+        "description": "Create a Razorpay order for purchasing a credit pack.\n\nReturns order details to be used with Razorpay checkout.",
+        "operationId": "create_credit_pack_order_api_v1_payments_credit_packs_order_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateOrderResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/payments/credit-packs/verify": {
+      "post": {
+        "tags": [
+          "payments"
+        ],
+        "summary": "Verify Credit Pack Payment",
+        "description": "Verify payment and fulfill credit pack purchase.\n\nThis endpoint must be called after successful payment on the frontend.\nIt verifies the payment signature and adds credits to the user's account.",
+        "operationId": "verify_credit_pack_payment_api_v1_payments_credit_packs_verify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyPaymentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyPaymentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/payments/subscription-plans": {
+      "get": {
+        "tags": [
+          "payments"
+        ],
+        "summary": "Get Subscription Plans",
+        "description": "Get available subscription plans with pricing.\n\nReturns plans with pricing in the specified currency.\nNo authentication required - plans are public.",
+        "operationId": "get_subscription_plans_api_v1_payments_subscription_plans_get",
+        "parameters": [
+          {
+            "name": "currency",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "INR",
+                "USD"
+              ],
+              "type": "string",
+              "description": "Currency for pricing",
+              "default": "INR",
+              "title": "Currency"
+            },
+            "description": "Currency for pricing"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SubscriptionPlanResponse"
+                  },
+                  "title": "Response Get Subscription Plans Api V1 Payments Subscription Plans Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/payments/subscriptions/order": {
+      "post": {
+        "tags": [
+          "payments"
+        ],
+        "summary": "Create Subscription Order",
+        "description": "Create a Razorpay subscription.\n\nReturns subscription details for checkout. For subscriptions,\nRazorpay handles recurring billing automatically.",
+        "operationId": "create_subscription_order_api_v1_payments_subscriptions_order_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSubscriptionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateSubscriptionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/payments/subscriptions/verify": {
+      "post": {
+        "tags": [
+          "payments"
+        ],
+        "summary": "Verify Subscription Payment",
+        "description": "Verify subscription payment and activate subscription.\n\nThis endpoint must be called after successful subscription payment.\nIt verifies the signature and activates the user's subscription.",
+        "operationId": "verify_subscription_payment_api_v1_payments_subscriptions_verify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifySubscriptionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/payments/subscriptions/cancel": {
+      "post": {
+        "tags": [
+          "payments"
+        ],
+        "summary": "Cancel Subscription",
+        "description": "Cancel the user's current subscription.\n\nBy default, cancellation takes effect at the end of the billing period.\nSet immediate=true for immediate cancellation.",
+        "operationId": "cancel_subscription_api_v1_payments_subscriptions_cancel_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "immediate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Cancel immediately instead of at period end",
+              "default": false,
+              "title": "Immediate"
+            },
+            "description": "Cancel immediately instead of at period end"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/payments/subscriptions/auto-renew": {
+      "post": {
+        "tags": [
+          "payments"
+        ],
+        "summary": "Toggle Auto Renew",
+        "description": "Toggle auto-renewal for subscription.\n\nWhen disabled, the subscription will cancel at the end of the billing period.",
+        "operationId": "toggle_auto_renew_api_v1_payments_subscriptions_auto_renew_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutoRenewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/payments/subscriptions/current": {
+      "get": {
+        "tags": [
+          "payments"
+        ],
+        "summary": "Get Current Subscription",
+        "description": "Get user's current subscription details.",
+        "operationId": "get_current_subscription_api_v1_payments_subscriptions_current_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/payments/billing-history": {
+      "get": {
+        "tags": [
+          "payments"
+        ],
+        "summary": "Get Billing History",
+        "description": "Get user's billing history.",
+        "operationId": "get_billing_history_api_v1_payments_billing_history_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 10,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/payments/billing-history/{transaction_id}/invoice": {
+      "post": {
+        "tags": [
+          "payments"
+        ],
+        "summary": "Generate Invoice",
+        "description": "Generate and return an invoice URL for a billing transaction.",
+        "operationId": "generate_invoice_api_v1_payments_billing_history__transaction_id__invoice_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "transaction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Transaction Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/payments/webhooks/razorpay": {
+      "post": {
+        "tags": [
+          "payments"
+        ],
+        "summary": "Razorpay Webhook",
+        "description": "Handle Razorpay webhooks.\n\nThis endpoint receives payment events from Razorpay and processes them.\nEvents include: payment.captured, subscription.activated, subscription.charged, etc.",
+        "operationId": "razorpay_webhook_api_v1_payments_webhooks_razorpay_post",
+        "parameters": [
+          {
+            "name": "X-Razorpay-Signature",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "X-Razorpay-Signature"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/payments/test-cards": {
+      "get": {
+        "tags": [
+          "payments"
+        ],
+        "summary": "Get Test Cards",
+        "description": "Get test card details for development.\n\nOnly available in test mode.",
+        "operationId": "get_test_cards_api_v1_payments_test_cards_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/payments/detect-currency": {
+      "get": {
+        "tags": [
+          "payments"
+        ],
+        "summary": "Detect Currency",
+        "description": "Detect appropriate currency based on country.\n\nReturns INR for India, USD for other countries.",
+        "operationId": "detect_currency_api_v1_payments_detect_currency_get",
+        "parameters": [
+          {
+            "name": "country_code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "ISO country code",
+              "title": "Country Code"
+            },
+            "description": "ISO country code"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/payment-methods/": {
+      "get": {
+        "tags": [
+          "payment-methods"
+        ],
+        "summary": "Get Payment Methods",
+        "description": "Get list of saved payment methods for the current user.",
+        "operationId": "get_payment_methods_api_v1_payment_methods__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethodListResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/payment-methods/{method_id}": {
+      "delete": {
+        "tags": [
+          "payment-methods"
+        ],
+        "summary": "Delete Payment Method",
+        "description": "Delete a saved payment method.",
+        "operationId": "delete_payment_method_api_v1_payment_methods__method_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "method_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Method Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/2fa/setup": {
+      "post": {
+        "tags": [
+          "two-factor"
+        ],
+        "summary": "Setup 2Fa",
+        "description": "Generate a new 2FA secret for setup.",
+        "operationId": "setup_2fa_api_v1_auth_2fa_setup_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/2fa/enable": {
+      "post": {
+        "tags": [
+          "two-factor"
+        ],
+        "summary": "Enable 2Fa",
+        "description": "Enable 2FA by verifying the code matches the provided secret.",
+        "operationId": "enable_2fa_api_v1_auth_2fa_enable_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/2fa/disable": {
+      "post": {
+        "tags": [
+          "two-factor"
+        ],
+        "summary": "Disable 2Fa",
+        "description": "Disable 2FA. Requires verification code.",
+        "operationId": "disable_2fa_api_v1_auth_2fa_disable_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/2fa/verify": {
+      "post": {
+        "tags": [
+          "two-factor"
+        ],
+        "summary": "Verify 2Fa",
+        "description": "Verify 2FA code against stored secret.",
+        "operationId": "verify_2fa_api_v1_auth_2fa_verify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
     "/": {
       "get": {
         "summary": "Root",
@@ -6216,7 +7621,100 @@
       "get": {
         "summary": "Health Check",
         "description": "Health check endpoint - HTML page served from template.",
-        "operationId": "health_check_health_get",
+        "operationId": "health_check_health_head",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "summary": "Health Check",
+        "description": "Health check endpoint - HTML page served from template.",
+        "operationId": "health_check_health_head",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/privacy": {
+      "get": {
+        "summary": "Privacy Policy",
+        "description": "Privacy Policy Page.",
+        "operationId": "privacy_policy_privacy_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/terms": {
+      "get": {
+        "summary": "Terms Conditions",
+        "description": "Terms and Conditions Page.",
+        "operationId": "terms_conditions_terms_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/refund": {
+      "get": {
+        "summary": "Refund Policy",
+        "description": "Refund Policy Page.",
+        "operationId": "refund_policy_refund_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/support": {
+      "get": {
+        "summary": "Contact Support",
+        "description": "Support/Contact Us Page.",
+        "operationId": "contact_support_support_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -6479,6 +7977,61 @@
         ],
         "title": "AssetResponse"
       },
+      "AuthResponse": {
+        "properties": {
+          "access_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "bearer"
+          },
+          "user": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserPrivateProfile"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          }
+        },
+        "type": "object",
+        "title": "AuthResponse",
+        "description": "Standard authentication response containing token and user profile."
+      },
       "AuthStart": {
         "properties": {
           "email": {
@@ -6492,6 +8045,20 @@
           "email"
         ],
         "title": "AuthStart"
+      },
+      "AutoRenewRequest": {
+        "properties": {
+          "auto_renew": {
+            "type": "boolean",
+            "title": "Auto Renew"
+          }
+        },
+        "type": "object",
+        "required": [
+          "auto_renew"
+        ],
+        "title": "AutoRenewRequest",
+        "description": "Request to toggle auto-renew."
       },
       "BillingHistoryItem": {
         "properties": {
@@ -6707,6 +8274,17 @@
               }
             ],
             "title": "App Version"
+          },
+          "attachment_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attachment Url"
           }
         },
         "type": "object",
@@ -6732,6 +8310,73 @@
           "project_ids"
         ],
         "title": "BulkDeleteRequest"
+      },
+      "CardDetails": {
+        "properties": {
+          "last4": {
+            "type": "string",
+            "title": "Last4"
+          },
+          "network": {
+            "type": "string",
+            "title": "Network"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "issuer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issuer"
+          },
+          "expiry_month": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiry Month"
+          },
+          "expiry_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiry Year"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "last4",
+          "network",
+          "type"
+        ],
+        "title": "CardDetails"
       },
       "CategoryCount": {
         "properties": {
@@ -6815,6 +8460,294 @@
         },
         "type": "object",
         "title": "ChatCreate"
+      },
+      "CommentResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "template_id": {
+            "type": "string",
+            "title": "Template Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "user": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CommentUser"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "is_owner": {
+            "type": "boolean",
+            "title": "Is Owner",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "template_id",
+          "user_id",
+          "content",
+          "created_at"
+        ],
+        "title": "CommentResponse"
+      },
+      "CommentUser": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "avatar_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "CommentUser"
+      },
+      "CreateCommentRequest": {
+        "properties": {
+          "content": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "content"
+        ],
+        "title": "CreateCommentRequest"
+      },
+      "CreateOrderRequest": {
+        "properties": {
+          "pack_id": {
+            "type": "string",
+            "title": "Pack Id"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD"
+            ],
+            "title": "Currency",
+            "default": "INR"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pack_id"
+        ],
+        "title": "CreateOrderRequest",
+        "description": "Request to create a payment order."
+      },
+      "CreateOrderResponse": {
+        "properties": {
+          "order_id": {
+            "type": "string",
+            "title": "Order Id"
+          },
+          "razorpay_key_id": {
+            "type": "string",
+            "title": "Razorpay Key Id"
+          },
+          "amount": {
+            "type": "integer",
+            "title": "Amount"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "pack_id": {
+            "type": "string",
+            "title": "Pack Id"
+          },
+          "pack_name": {
+            "type": "string",
+            "title": "Pack Name"
+          },
+          "credits": {
+            "type": "integer",
+            "title": "Credits"
+          },
+          "bonus_credits": {
+            "type": "integer",
+            "title": "Bonus Credits"
+          },
+          "total_credits": {
+            "type": "integer",
+            "title": "Total Credits"
+          },
+          "receipt": {
+            "type": "string",
+            "title": "Receipt"
+          },
+          "is_test_mode": {
+            "type": "boolean",
+            "title": "Is Test Mode"
+          }
+        },
+        "type": "object",
+        "required": [
+          "order_id",
+          "razorpay_key_id",
+          "amount",
+          "currency",
+          "pack_id",
+          "pack_name",
+          "credits",
+          "bonus_credits",
+          "total_credits",
+          "receipt",
+          "is_test_mode"
+        ],
+        "title": "CreateOrderResponse",
+        "description": "Response with order details for Razorpay checkout."
+      },
+      "CreateSubscriptionRequest": {
+        "properties": {
+          "plan_id": {
+            "type": "string",
+            "title": "Plan Id"
+          },
+          "billing_cycle": {
+            "type": "string",
+            "enum": [
+              "monthly",
+              "yearly"
+            ],
+            "title": "Billing Cycle",
+            "default": "monthly"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD"
+            ],
+            "title": "Currency",
+            "default": "INR"
+          }
+        },
+        "type": "object",
+        "required": [
+          "plan_id"
+        ],
+        "title": "CreateSubscriptionRequest",
+        "description": "Request to create subscription order."
+      },
+      "CreateSubscriptionResponse": {
+        "properties": {
+          "subscription_id": {
+            "type": "string",
+            "title": "Subscription Id"
+          },
+          "razorpay_key_id": {
+            "type": "string",
+            "title": "Razorpay Key Id"
+          },
+          "plan_id": {
+            "type": "string",
+            "title": "Plan Id"
+          },
+          "plan_name": {
+            "type": "string",
+            "title": "Plan Name"
+          },
+          "billing_cycle": {
+            "type": "string",
+            "title": "Billing Cycle"
+          },
+          "amount": {
+            "type": "integer",
+            "title": "Amount"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "short_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Short Url"
+          },
+          "is_test_mode": {
+            "type": "boolean",
+            "title": "Is Test Mode"
+          }
+        },
+        "type": "object",
+        "required": [
+          "subscription_id",
+          "razorpay_key_id",
+          "plan_id",
+          "plan_name",
+          "billing_cycle",
+          "amount",
+          "currency",
+          "is_test_mode"
+        ],
+        "title": "CreateSubscriptionResponse",
+        "description": "Response with subscription details for checkout."
       },
       "CreateTemplateRequest": {
         "properties": {
@@ -6967,6 +8900,71 @@
           "quality_name"
         ],
         "title": "CreditCalculationResponse"
+      },
+      "CreditPackResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "credits": {
+            "type": "integer",
+            "title": "Credits"
+          },
+          "bonus_credits": {
+            "type": "integer",
+            "title": "Bonus Credits"
+          },
+          "total_credits": {
+            "type": "integer",
+            "title": "Total Credits"
+          },
+          "price": {
+            "type": "number",
+            "title": "Price"
+          },
+          "price_display": {
+            "type": "string",
+            "title": "Price Display"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "is_popular": {
+            "type": "boolean",
+            "title": "Is Popular",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "credits",
+          "bonus_credits",
+          "total_credits",
+          "price",
+          "price_display",
+          "currency"
+        ],
+        "title": "CreditPackResponse",
+        "description": "Credit pack details."
       },
       "CreditPackage": {
         "properties": {
@@ -7250,6 +9248,15 @@
             "type": "boolean",
             "title": "Include Images",
             "default": false
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "json",
+              "csv"
+            ],
+            "title": "Format",
+            "default": "json"
           }
         },
         "type": "object",
@@ -7416,6 +9423,95 @@
         ],
         "title": "ForgotPassword"
       },
+      "GenerateImageRequest": {
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "maxLength": 10000,
+            "minLength": 1,
+            "title": "Prompt",
+            "description": "Text prompt for image generation"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "description": "OpenRouter model ID"
+          },
+          "aspect_ratio": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aspect Ratio",
+            "description": "Image aspect ratio",
+            "default": "1:1"
+          },
+          "image_size": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Size",
+            "description": "Image size (1K, 2K, 4K - Gemini only)"
+          },
+          "num_outputs": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 4,
+                "minimum": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Outputs",
+            "description": "Number of images to generate",
+            "default": 1
+          },
+          "negative_prompt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Negative Prompt",
+            "description": "Negative prompt (if supported)"
+          },
+          "quality": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality",
+            "description": "Quality level: standard or hd",
+            "default": "standard"
+          }
+        },
+        "type": "object",
+        "required": [
+          "prompt",
+          "model"
+        ],
+        "title": "GenerateImageRequest",
+        "description": "Request schema for image generation."
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -7518,26 +9614,45 @@
         "title": "ImportedModelResponse",
         "description": "Response for imported model."
       },
+      "InvoiceResponse": {
+        "properties": {
+          "invoice_url": {
+            "type": "string",
+            "title": "Invoice Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "invoice_url"
+        ],
+        "title": "InvoiceResponse",
+        "description": "Response with invoice URL."
+      },
       "JobCreate": {
         "properties": {
           "project_id": {
             "type": "string",
+            "maxLength": 100,
             "title": "Project Id"
           },
           "quality": {
             "type": "string",
+            "maxLength": 20,
             "title": "Quality",
             "default": "std"
           },
           "variants": {
             "type": "integer",
+            "maximum": 4,
+            "minimum": 1,
             "title": "Variants",
             "default": 2
           },
           "model": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 100
               },
               {
                 "type": "null"
@@ -7599,9 +9714,9 @@
       },
       "JobResponse": {
         "properties": {
-          "job_id": {
+          "id": {
             "type": "string",
-            "title": "Job Id"
+            "title": "Id"
           },
           "status": {
             "type": "string",
@@ -7614,7 +9729,7 @@
         },
         "type": "object",
         "required": [
-          "job_id",
+          "id",
           "status",
           "cost_credits"
         ],
@@ -7888,6 +10003,42 @@
         "title": "PaginatedBillingHistory",
         "description": "Paginated billing history response."
       },
+      "PaginatedComments": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/CommentResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "has_more": {
+            "type": "boolean",
+            "title": "Has More"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "total",
+          "page",
+          "limit",
+          "has_more"
+        ],
+        "title": "PaginatedComments"
+      },
       "PaginatedProjectList": {
         "properties": {
           "projects": {
@@ -7997,6 +10148,60 @@
         ],
         "title": "PaginatedUserList",
         "description": "Paginated list of users."
+      },
+      "PaymentMethod": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "method": {
+            "type": "string",
+            "title": "Method"
+          },
+          "card": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CardDetails"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "type": "integer",
+            "title": "Created At"
+          },
+          "is_default": {
+            "type": "boolean",
+            "title": "Is Default",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "method",
+          "created_at"
+        ],
+        "title": "PaymentMethod"
+      },
+      "PaymentMethodListResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/PaymentMethod"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "PaymentMethodListResponse"
       },
       "PlanResponse": {
         "properties": {
@@ -9278,10 +11483,14 @@
         "properties": {
           "token": {
             "type": "string",
-            "title": "Token"
+            "maxLength": 512,
+            "minLength": 10,
+            "title": "Token",
+            "description": "Device push token"
           },
           "platform": {
             "type": "string",
+            "pattern": "^(ios|android|web|unknown)$",
             "title": "Platform",
             "default": "unknown"
           }
@@ -9588,6 +11797,102 @@
           "email"
         ],
         "title": "ResendConfirmation"
+      },
+      "SetupResponse": {
+        "properties": {
+          "secret": {
+            "type": "string",
+            "title": "Secret"
+          },
+          "otpauth_url": {
+            "type": "string",
+            "title": "Otpauth Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "secret",
+          "otpauth_url"
+        ],
+        "title": "SetupResponse"
+      },
+      "SubscriptionPlanResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "price_monthly": {
+            "type": "number",
+            "title": "Price Monthly"
+          },
+          "price_yearly": {
+            "type": "number",
+            "title": "Price Yearly"
+          },
+          "price_monthly_display": {
+            "type": "string",
+            "title": "Price Monthly Display"
+          },
+          "price_yearly_display": {
+            "type": "string",
+            "title": "Price Yearly Display"
+          },
+          "yearly_savings": {
+            "type": "number",
+            "title": "Yearly Savings"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "credits_per_month": {
+            "type": "integer",
+            "title": "Credits Per Month"
+          },
+          "features": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Features"
+          },
+          "is_enterprise": {
+            "type": "boolean",
+            "title": "Is Enterprise",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "price_monthly",
+          "price_yearly",
+          "price_monthly_display",
+          "price_yearly_display",
+          "yearly_savings",
+          "currency",
+          "credits_per_month",
+          "features"
+        ],
+        "title": "SubscriptionPlanResponse",
+        "description": "Subscription plan details."
       },
       "SubscriptionResponse": {
         "properties": {
@@ -10647,6 +12952,99 @@
         "title": "UserPreferencesUpdate",
         "description": "Update model for user preferences. All fields optional for partial updates."
       },
+      "UserPrivateProfile": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "dob": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dob"
+          },
+          "email_confirmed": {
+            "type": "boolean",
+            "title": "Email Confirmed",
+            "default": false
+          },
+          "credits": {
+            "type": "integer",
+            "title": "Credits",
+            "default": 0
+          },
+          "newsletter_opt_in": {
+            "type": "boolean",
+            "title": "Newsletter Opt In",
+            "default": false
+          },
+          "profile_photo_asset_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Photo Asset Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "is_verified": {
+            "type": "boolean",
+            "title": "Is Verified",
+            "default": false
+          },
+          "is_public": {
+            "type": "boolean",
+            "title": "Is Public",
+            "default": true
+          },
+          "plan": {
+            "type": "string",
+            "title": "Plan",
+            "default": "free"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "username",
+          "full_name"
+        ],
+        "title": "UserPrivateProfile",
+        "description": "Private user profile returned to the authenticated user.\nStrictly defines which fields are safe to expose to the frontend."
+      },
       "UserSignin": {
         "properties": {
           "email": {
@@ -10658,6 +13056,17 @@
             "type": "string",
             "maxLength": 128,
             "title": "Password"
+          },
+          "otp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Otp"
           }
         },
         "type": "object",
@@ -10828,6 +13237,59 @@
         ],
         "title": "VerifyOTP"
       },
+      "VerifyPaymentRequest": {
+        "properties": {
+          "razorpay_order_id": {
+            "type": "string",
+            "title": "Razorpay Order Id"
+          },
+          "razorpay_payment_id": {
+            "type": "string",
+            "title": "Razorpay Payment Id"
+          },
+          "razorpay_signature": {
+            "type": "string",
+            "title": "Razorpay Signature"
+          }
+        },
+        "type": "object",
+        "required": [
+          "razorpay_order_id",
+          "razorpay_payment_id",
+          "razorpay_signature"
+        ],
+        "title": "VerifyPaymentRequest",
+        "description": "Request to verify and fulfill payment."
+      },
+      "VerifyPaymentResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "credits_awarded": {
+            "type": "integer",
+            "title": "Credits Awarded",
+            "default": 0
+          },
+          "new_balance": {
+            "type": "integer",
+            "title": "New Balance",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "VerifyPaymentResponse",
+        "description": "Response after payment verification."
+      },
       "VerifyRecoveryOTP": {
         "properties": {
           "email": {
@@ -10861,6 +13323,47 @@
         ],
         "title": "VerifyRecoveryOTP"
       },
+      "VerifyRequest": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "secret": {
+            "type": "string",
+            "title": "Secret"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code"
+        ],
+        "title": "VerifyRequest"
+      },
+      "VerifySubscriptionRequest": {
+        "properties": {
+          "razorpay_subscription_id": {
+            "type": "string",
+            "title": "Razorpay Subscription Id"
+          },
+          "razorpay_payment_id": {
+            "type": "string",
+            "title": "Razorpay Payment Id"
+          },
+          "razorpay_signature": {
+            "type": "string",
+            "title": "Razorpay Signature"
+          }
+        },
+        "type": "object",
+        "required": [
+          "razorpay_subscription_id",
+          "razorpay_payment_id",
+          "razorpay_signature"
+        ],
+        "title": "VerifySubscriptionRequest",
+        "description": "Request to verify subscription payment."
+      },
       "VoteRequest": {
         "properties": {
           "vote_type": {
@@ -10878,11 +13381,27 @@
         "title": "VoteRequest",
         "description": "Request model for voting on a template."
       },
-      "api__v1__endpoints__jobs__JobResponse": {
+      "api__v1__endpoints__assets__BulkDeleteRequest": {
         "properties": {
-          "id": {
+          "asset_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Asset Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "asset_ids"
+        ],
+        "title": "BulkDeleteRequest"
+      },
+      "api__v1__endpoints__projects__JobResponse": {
+        "properties": {
+          "job_id": {
             "type": "string",
-            "title": "Id"
+            "title": "Job Id"
           },
           "status": {
             "type": "string",
@@ -10895,7 +13414,7 @@
         },
         "type": "object",
         "required": [
-          "id",
+          "job_id",
           "status",
           "cost_credits"
         ],
