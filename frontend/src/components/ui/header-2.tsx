@@ -4,135 +4,119 @@ import { Button, buttonVariants } from '@/src/components/ui/button';
 import { cn } from '@/src/lib/utils';
 import { MenuToggleIcon } from '@/src/components/ui/menu-toggle-icon';
 import { useScroll } from '@/src/components/ui/use-scroll';
-import { AuthModal } from '@/src/components/ui/auth-modal';
+import { useAuth } from '@/src/context/auth-context';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export function Header() {
     const [open, setOpen] = React.useState(false);
-    const [authOpen, setAuthOpen] = React.useState(false);
     const scrolled = useScroll(10);
+    const { isAuthenticated } = useAuth();
+    const router = useRouter();
 
     const links = [
-        {
-            label: 'Features',
-            href: '#',
-        },
-        {
-            label: 'Pricing',
-            href: '#',
-        },
-        {
-            label: 'Blogspace',
-            href: '/blogspace',
-        },
-        {
-            label: 'Download',
-            href: '/download',
-        },
-        {
-            label: 'About',
-            href: '#',
-        },
+        { label: 'Features', href: '#' },
+        { label: 'Pricing', href: '#' },
+        { label: 'Blogspace', href: '/blogspace' },
+        { label: 'Download', href: '/download' },
+        { label: 'About', href: '#' },
     ];
 
     React.useEffect(() => {
         if (open) {
-            // Disable scroll
             document.body.style.overflow = 'hidden';
         } else {
-            // Re-enable scroll
             document.body.style.overflow = '';
         }
-
-        // Cleanup when component unmounts (important for Next.js)
         return () => {
             document.body.style.overflow = '';
         };
     }, [open]);
 
-    return (
-        <header
-            className={cn(
-                'fixed top-0 left-0 right-0 z-50 mx-auto w-full max-w-5xl border-b border-transparent md:rounded-md md:transition-all md:ease-out',
-                {
-                    'bg-white/90 supports-[backdrop-filter]:bg-white/80 backdrop-blur-lg md:top-4 md:max-w-4xl md:shadow':
-                        scrolled && !open,
-                    'bg-white/95': open,
-                },
-            )}
-        >
-            <nav
-                className={cn(
-                    'flex h-14 w-full items-center justify-between px-4 md:h-12 md:transition-all md:ease-out',
-                    {
-                        'md:px-2': scrolled,
-                    },
-                )}
-            >
-                {/* Branding */}
-                <span className="text-xl font-bold tracking-tight font-silver" style={{ color: '#0f7d70' }}>
-                    Mugshot Studio
-                </span>
+    const handleActionClick = () => {
+        if (isAuthenticated) {
+            router.push('/dashboard');
+        } else {
+            router.push('/login');
+        }
+    };
 
-                <div className="hidden items-center gap-2 md:flex">
-                    {links.map((link, i) => (
-                        <a key={i} className={cn(buttonVariants({ variant: 'ghost' }), "text-black hover:text-black/80")} href={link.href}>
-                            {link.label}
-                        </a>
-                    ))}
-                    <Button
-                        variant="outline"
-                        className="text-black border-black bg-white hover:bg-[#0f7d70] hover:border-[#0f7d70] hover:text-white transition-colors duration-200"
-                        onClick={() => setAuthOpen(true)}
-                    >
-                        Sign In
-                    </Button>
-                    <Button style={{ backgroundColor: '#0f7d70', color: 'white' }} onClick={() => setAuthOpen(true)}>Get Started</Button>
+    return (
+        <header className="w-full bg-white border-b border-gray-100 sticky top-0 z-50">
+            <nav className="hidden md:flex w-full items-center justify-between px-8 py-4 max-w-[1440px] mx-auto">
+                {/* Branding */}
+                <div className="flex-shrink-0">
+                    <span className="text-xl font-bold tracking-tight font-sans" style={{ color: '#0f7d70' }}>
+                        MugShot Studio
+                    </span>
                 </div>
-                <Button size="icon" variant="outline" onClick={() => setOpen(!open)} className="md:hidden">
-                    <MenuToggleIcon open={open} className="size-5" duration={300} />
-                </Button>
+
+                {/* Centered Links */}
+                <div className="flex-1 flex items-center justify-center gap-8">
+                    {links.map((link, i) => (
+                        <Link
+                            key={i}
+                            href={link.href}
+                            className={cn(buttonVariants({ variant: 'ghost' }), "text-black hover:text-black/80 font-medium")}
+                        >
+                            {link.label}
+                        </Link>
+                    ))}
+                </div>
+
+                {/* Right Side: Action Button */}
+                <div className="flex items-center gap-4 flex-shrink-0">
+                    <Button
+                        style={{ backgroundColor: '#0f7d70', color: 'white' }}
+                        className="rounded-full px-8 py-2.5 hover:bg-[#0c6a61] transition-opacity"
+                        onClick={handleActionClick}
+                    >
+                        {isAuthenticated ? 'Dashboard' : 'Get Started'}
+                    </Button>
+                </div>
             </nav>
 
+            {/* Mobile Nav */}
+            <div className="flex md:hidden items-center justify-between px-4 py-3">
+                <span className="text-xl font-bold tracking-tight font-sans" style={{ color: '#0f7d70' }}>
+                    MugShot Studio
+                </span>
+                <Button size="icon" variant="ghost" onClick={() => setOpen(!open)}>
+                    <MenuToggleIcon open={open} className="size-6 text-black" />
+                </Button>
+            </div>
+
+            {/* Mobile Menu Content */}
             <div
                 className={cn(
-                    'bg-white/95 fixed top-14 right-0 bottom-0 left-0 z-50 flex flex-col overflow-hidden border-y md:hidden',
-                    open ? 'block' : 'hidden',
+                    'fixed inset-0 z-40 bg-white pt-20 px-6 transition-transform duration-300 ease-in-out md:hidden',
+                    open ? 'translate-x-0' : 'translate-x-full'
                 )}
             >
-                <div
-                    data-slot={open ? 'open' : 'closed'}
-                    className={cn(
-                        'data-[slot=open]:animate-in data-[slot=open]:zoom-in-95 data-[slot=closed]:animate-out data-[slot=closed]:zoom-out-95 ease-out',
-                        'flex h-full w-full flex-col justify-between gap-y-2 p-4',
-                    )}
-                >
-                    <div className="grid gap-y-2">
-                        {links.map((link) => (
-                            <a
-                                key={link.label}
-                                className={buttonVariants({
-                                    variant: 'ghost',
-                                    className: 'justify-start text-black hover:text-black/80',
-                                })}
-                                href={link.href}
-                            >
-                                {link.label}
-                            </a>
-                        ))}
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <Button
-                            variant="outline"
-                            className="w-full text-black border-black bg-white hover:bg-[#0f7d70] hover:border-[#0f7d70] hover:text-white transition-colors duration-200"
-                            onClick={() => setAuthOpen(true)}
+                <div className="flex flex-col gap-6">
+                    {links.map((link) => (
+                        <Link
+                            key={link.label}
+                            href={link.href}
+                            className="text-lg font-semibold text-gray-900"
+                            onClick={() => setOpen(false)}
                         >
-                            Sign In
-                        </Button>
-                        <Button className="w-full" style={{ backgroundColor: '#0f7d70', color: 'white' }} onClick={() => setAuthOpen(true)}>Get Started</Button>
-                    </div>
+                            {link.label}
+                        </Link>
+                    ))}
+                    <hr className="border-gray-100" />
+                    <Button
+                        className="w-full rounded-full py-6 text-lg"
+                        style={{ backgroundColor: '#0f7d70', color: 'white' }}
+                        onClick={() => {
+                            handleActionClick();
+                            setOpen(false);
+                        }}
+                    >
+                        {isAuthenticated ? 'Dashboard' : 'Get Started'}
+                    </Button>
                 </div>
             </div>
-            <AuthModal open={authOpen} onOpenChange={setAuthOpen} />
         </header>
     );
 }

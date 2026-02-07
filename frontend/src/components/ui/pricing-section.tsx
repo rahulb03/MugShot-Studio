@@ -198,7 +198,7 @@ export function PricingSection() {
         <section className="py-24 bg-gray-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-16">
-                    <h2 className="text-4xl md:text-5xl font-bold text-[#0f7d70] mb-4 font-silver">
+                    <h2 className="text-4xl md:text-5xl font-bold text-[#0f7d70] mb-4 font-sans">
                         MugShot Studio Pricing
                     </h2>
                     <p className="text-xl text-gray-600">

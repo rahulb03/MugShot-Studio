@@ -56,7 +56,7 @@ export function BlogHeader({
                                     />
                                 </div>
                                 <div className="hidden sm:block">
-                                    <span className="text-xl font-bold tracking-tight font-silver text-[#0f7d70]">
+                                    <span className="text-xl font-bold tracking-tight font-sans text-[#0f7d70]">
                                         Blogspace
                                     </span>
                                     <p className="text-xs text-gray-500 dark:text-gray-400 -mt-1">

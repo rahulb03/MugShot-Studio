@@ -1,55 +1,97 @@
 'use client';
 
-import { DotScreenShader } from "@/src/components/ui/dot-shader-background";
-import { Header } from "@/src/components/ui/header-2";
+import Image from "next/image";
+import backgroundImg from "./assets/background.webp";
+import CardNav from "@/src/components/ui/card-nav";
 import { HeroPill } from "@/src/components/ui/hero-pill";
 import { AI_Prompt } from "@/src/components/ui/animated-ai-input";
 import { LogoCarousel, allLogos } from "@/src/components/ui/logo-carousel";
 import { GradientHeading } from "@/src/components/ui/gradient-heading";
 import { GridFeatureCards } from "@/src/components/ui/grid-feature-cards";
 import { InteractiveImageAccordion } from "@/src/components/ui/interactive-image-accordion";
-import { PricingSection } from "@/src/components/ui/pricing-section";
+import { PricingSection } from "@/src/components/ui/pricing";
 import { FAQSection } from "@/src/components/ui/faq-tabs";
 import StickyFooter from "@/src/components/ui/footer";
-import { AuthModal } from "@/src/components/ui/auth-modal";
-import React from "react";
 
 export default function Home() {
-  const [authOpen, setAuthOpen] = React.useState(false);
-  
+
+  const navItems = [
+    {
+      label: "Product",
+      bgColor: "#0f7d70",
+      textColor: "#fff",
+      links: [
+        { label: "Features", ariaLabel: "Features", href: "#" },
+        { label: "Pricing", ariaLabel: "Pricing", href: "#" },
+        { label: "Download", ariaLabel: "Download", href: "/download" }
+      ]
+    },
+    {
+      label: "Resources",
+      bgColor: "#022312",
+      textColor: "#fff",
+      links: [
+        { label: "Blogspace", ariaLabel: "Blogspace", href: "/blogspace" },
+        { label: "Community", ariaLabel: "Community", href: "/community" }
+      ]
+    },
+    {
+      label: "Company",
+      bgColor: "#0D0716",
+      textColor: "#fff",
+      links: [
+        { label: "About", ariaLabel: "About", href: "#" },
+        { label: "Contact", ariaLabel: "Contact", href: "#" }
+      ]
+    }
+  ];
+
   return (
     <div className="min-h-screen w-full flex flex-col relative bg-white overflow-x-hidden">
-      <Header />
+      <CardNav
+        items={navItems}
+        baseColor="#000"
+        menuColor="#fff"
+        buttonBgColor="#0f7d70"
+        buttonTextColor="#fff"
+      />
       <main className="flex-1 flex flex-col items-center justify-start w-full">
-        <div className="w-full max-w-5xl mx-auto px-4 pt-20 pb-20 flex flex-col items-center">
-          {/* Hero Section with Shader */}
-          <section className="relative w-full flex flex-col items-center min-h-[80vh] justify-center mb-32">
-            <div className="absolute inset-0 -mx-[50vw] left-1/2 w-screen h-[120%] -top-32 pointer-events-none">
-              <DotScreenShader />
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white pointer-events-none" />
-            </div>
+        {/* Hero Section with Shader */}
+        <section className="relative w-full flex flex-col items-center min-h-screen justify-center overflow-hidden">
+          {/* New Hero Background Image - Full Width */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+            <Image
+              src={backgroundImg}
+              alt="Hero background"
+              fill
+              className="object-cover"
+              priority
+            />
+            {/* Overlay for readability */}
+            <div className="absolute inset-0 bg-black/20" />
+          </div>
 
-            <div className="relative z-10 flex flex-col items-center gap-6 mb-12 w-full">
-              <HeroPill
-                href="#"
-                label="Powered by Nano Banana Pro 🍌"
-                announcement="✨ New AI styles"
-                className="bg-[#0f7d70]/10 ring-[#0f7d70]/20 [&_div]:bg-[#0f7d70]/10 [&_div]:text-[#0f7d70] [&_div]:text-[#0f7d70] [&_svg_path]:fill-[#0f7d70]"
-              />
-              <h1 className="text-5xl md:text-7xl font-light tracking-tight mix-blend-exclusion whitespace-nowrap pointer-events-none font-silver text-center" style={{ color: '#0f7d70' }}>
-                MugShot Studio
-              </h1>
-              <p className="text-lg md:text-xl font-light text-center text-black mix-blend-exclusion max-w-2xl leading-relaxed pointer-events-none">
-                Transform your photos into high-definition, AI-crafted Thumbnails in seconds.
-              </p>
-            </div>
 
-            <div className="relative z-10 w-full flex justify-center">
+          <div className="relative z-10 flex flex-col items-center gap-6 w-full max-w-5xl px-4 pt-32">
+            <HeroPill
+              href="#"
+              label="Powered by Nano Banana Pro 🍌"
+              announcement="✨ New AI styles"
+              className="bg-white/10 ring-white/20 text-white backdrop-blur-md [&_div]:bg-white/10 [&_div]:text-white [&_svg_path]:fill-white"
+            />
+            <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white font-sans text-center drop-shadow-md">
+              MugShot Studio
+            </h1>
+            <p className="text-lg md:text-xl font-light text-center text-white/90 max-w-2xl leading-relaxed drop-shadow-sm">
+              Transform your photos into high-definition, AI-crafted Thumbnails in seconds.
+            </p>
+
+            <div className="relative z-10 w-full flex justify-center mt-8">
               <div className="md:hidden w-full flex justify-center">
                 <button
-                  className="px-6 py-3 rounded-lg"
+                  className="px-6 py-3 rounded-lg font-medium"
                   style={{ backgroundColor: '#0f7d70', color: 'white' }}
-                  onClick={() => setAuthOpen(true)}
+                  onClick={() => window.location.href = '/login'}
                 >
                   Get Started
                 </button>
@@ -58,8 +100,10 @@ export default function Home() {
                 <AI_Prompt />
               </div>
             </div>
-          </section>
+          </div>
+        </section>
 
+        <div className="w-full max-w-5xl mx-auto px-4 pt-20 pb-20 flex flex-col items-center">
           <div className="w-full space-y-8 z-10">
             <div className="text-center space-y-4">
               <GradientHeading variant="black" size="sm" weight="base">
@@ -89,7 +133,11 @@ export default function Home() {
         </div>
 
         <div className="w-full z-10">
-          <PricingSection />
+          <PricingSection
+            plans={PLANS}
+            heading="Plans that Scale with You"
+            description="Whether you're just starting out or growing fast, our flexible pricing has you covered — with no hidden costs."
+          />
         </div>
 
         <div className="w-full z-10">
@@ -97,7 +145,95 @@ export default function Home() {
         </div>
         <StickyFooter />
       </main>
-      <AuthModal open={authOpen} onOpenChange={setAuthOpen} />
     </div>
   );
 }
+
+const PLANS = [
+  {
+    id: 'basic',
+    name: 'Basic',
+    info: 'For most individuals',
+    price: {
+      monthly: 7,
+      yearly: Math.round(7 * 12 * (1 - 0.12)),
+    },
+    features: [
+      { text: 'Up to 3 Blog posts', limit: '100 tags' },
+      { text: 'Up to 3 Transcriptions' },
+      { text: 'Up to 3 Posts stored' },
+      {
+        text: 'Markdown support',
+        tooltip: 'Export content in Markdown format',
+      },
+      {
+        text: 'Community support',
+        tooltip: 'Get answers your questions on discord',
+      },
+      {
+        text: 'AI powered suggestions',
+        tooltip: 'Get up to 100 AI powered suggestions',
+      },
+    ],
+    btn: {
+      text: 'Start Your Free Trial',
+      href: '#',
+    },
+  },
+  {
+    highlighted: true,
+    id: 'pro',
+    name: 'Pro',
+    info: 'For small businesses',
+    price: {
+      monthly: 17.99,
+      yearly: Math.round(17.99 * 12 * (1 - 0.12)),
+    },
+    features: [
+      { text: 'Up to 500 Blog Posts', limit: '500 tags' },
+      { text: 'Up to 500 Transcriptions' },
+      { text: 'Up to 500 Posts stored' },
+      {
+        text: 'Unlimited Markdown support',
+        tooltip: 'Export content in Markdown format',
+      },
+      { text: 'SEO optimization tools' },
+      { text: 'Priority support', tooltip: 'Get 24/7 chat support' },
+      {
+        text: 'AI powered suggestions',
+        tooltip: 'Get up to 500 AI powered suggestions',
+      },
+    ],
+    btn: {
+      text: 'Get started',
+      href: '#',
+    },
+  },
+  {
+    name: 'Business',
+    info: 'For large organizations',
+    price: {
+      monthly: 69.99,
+      yearly: Math.round(49.99 * 12 * (1 - 0.12)),
+    },
+    features: [
+      { text: 'Unlimited Blog Posts' },
+      { text: 'Unlimited Transcriptions' },
+      { text: 'Unlimited Posts stored' },
+      { text: 'Unlimited Markdown support' },
+      {
+        text: 'SEO optimization tools',
+        tooltip: 'Advanced SEO optimization tools',
+      },
+      { text: 'Priority support', tooltip: 'Get 24/7 chat support' },
+      {
+        text: 'AI powered suggestions',
+        tooltip: 'Get up to 500 AI powered suggestions',
+      },
+    ],
+    btn: {
+      text: 'Contact team',
+      href: '#',
+    },
+  },
+];

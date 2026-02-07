@@ -45,7 +45,7 @@ const AccordionItem = ({
             onMouseEnter={onMouseEnter}
         >
             {/* Background is now dark green */}
-            
+
             {/* Caption Text */}
             <span
                 className={cn(
@@ -79,7 +79,7 @@ export function InteractiveImageAccordion() {
                     {/* Left Side: Text Content */}
                     <div className="w-full md:w-1/2 text-center md:text-left pl-6">
                         <h2
-                            className="text-4xl md:text-6xl font-bold leading-tight tracking-tighter mb-6 font-silver"
+                            className="text-4xl md:text-6xl font-bold leading-tight tracking-tighter mb-6 font-sans"
                             style={{ color: '#07270e' }}
                         >
                             Who This Is For
